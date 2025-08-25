@@ -1,5 +1,5 @@
 project(
-  'loaders',
+  'orders',
   'cpp',
   version : '0.1',
   default_options : ['warning_level=3']
@@ -10,9 +10,13 @@ project_headers = [
 ]
 
 project_source_files = [
-  'src/orders_loader.cpp',
-  'src/grpc.cpp'
+  'src/orders_loader.cpp'
 ]
+
+project_dependencies = [
+  dependency('grpc', fallback : ['grpc', 'grpc_dep'])
+]
+
 
 public_headers = include_directories('include')
 
@@ -20,6 +24,7 @@ public_headers = include_directories('include')
 project_target = static_library(
   meson.project_name(),
   project_source_files,
+  dependencies: project_dependencies,
   include_directories : public_headers,
 )
 
