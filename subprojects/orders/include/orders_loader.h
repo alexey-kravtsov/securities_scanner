@@ -1,8 +1,4 @@
-namespace loaders {
-
-    class OrdersLoader {
-    public:
-        void load();
-    };
-
-}
+class OrdersLoader {
+public:
+    void load();
+};
