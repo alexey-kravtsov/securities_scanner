@@ -14,7 +14,7 @@ project_source_files = [
 ]
 
 project_dependencies = [
-  dependency('grpc', fallback : ['grpc', 'grpc_dep'])
+  
 ]
 
 
