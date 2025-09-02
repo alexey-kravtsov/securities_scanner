@@ -10,7 +10,7 @@ project_source_files = [
 ]
 
 project_dependencies = [
-  dependency('orders', fallback : ['orders', 'orders_dep'])
+  dependency('scanner', fallback : ['scanner', 'scanner_dep']),
 ]
 
 executable(

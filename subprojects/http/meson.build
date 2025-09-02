@@ -1,20 +1,21 @@
 project(
-  'orders',
+  'http',
   'cpp',
   version : '0.1',
   default_options : ['warning_level=3']
 )
 
 project_headers = [
-  'include/orders_loader.h'
+  'include/http.h'
 ]
 
 project_source_files = [
-  'src/orders_loader.cpp'
+  'src/http.cpp'
 ]
 
 project_dependencies = [
-  
+  dependency('libcrypto'),
+  dependency('libssl')
 ]
 
 
