@@ -20,44 +20,56 @@ HttpClient::~HttpClient() {
     }
 }
 
-HttpClient::HttpClient(const HttpClient&& other) {
-    HttpClient::host = other.host;
-    HttpClient::socket_ptr = std::unique_ptr<socket_t>(other.socket_ptr);
-}
+
+HttpClient::HttpClient(HttpClient&& other) 
+    : host(std::move(other.host)),
+      ssl_socket(std::move(other.ssl_socket)) {}
+
 
 void HttpClient::connect(const std::string& host) {
+    this->host = host;
+
     asio::io_service svc;
     ssl::context ctx(ssl::context::sslv23_client);
 
-    socket_t* ssocket = new socket_t { svc, ctx };
-    HttpClient::socket_ptr = std::unique_ptr<socket_t>(ssocket);
-    SSL_set_tlsext_host_name(ssocket->native_handle(), host.c_str());
+    ssl_socket = std::unique_ptr<socket_t>(new socket_t { svc, ctx });
+    SSL_set_tlsext_host_name(ssl_socket->native_handle(), host.c_str());
 
     ip::tcp::resolver resolver(svc);
     auto it = resolver.resolve(host, "443");
-    asio::connect(ssocket->lowest_layer(), it);
-    ssocket->handshake(ssl::stream_base::handshake_type::client);
+    asio::connect(ssl_socket->lowest_layer(), it);
+    ssl_socket->handshake(ssl::stream_base::handshake_type::client);
 }
 
 std::string HttpClient::get(const std::string& path) {
-    socket_t* ssocket = HttpClient::socket_ptr.get();
-    if (!ssocket) {
+    if (!ssl_socket.get()) {
         throw std::logic_error("Not connected");
     }
 
     http::request<http::string_body> req{ http::verb::get, path, 11 };
     req.set(http::field::host, host);
-    http::write(ssocket, req);
+    http::write(*ssl_socket, req);
     http::response<http::string_body> res;
     beast::flat_buffer buffer;
-    http::read(ssocket, buffer, res);
+    http::read(*ssl_socket, buffer, res);
     std::cout << "Headers" << std::endl;
     std::cout << res.base() << std::endl << std::endl;
     std::cout << "Body" << std::endl;
     std::cout << res.body() << std::endl << std::endl;
-    ssocket.shutdown();
+
+    return res.body();
 }
 
 void HttpClient::shutdown() {
+    if (!ssl_socket.get()) {
+        return;
+    }
 
+    try {
+        ssl_socket->shutdown();
+    } catch (std::exception const& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+    }
+
+    ssl_socket.release();
 }

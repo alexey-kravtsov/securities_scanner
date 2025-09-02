@@ -15,7 +15,7 @@ class HttpClient {
         HttpClient(const HttpClient& other) = delete;
         HttpClient& operator=(const HttpClient& other) = delete;
 
-        HttpClient(const HttpClient&& other);
+        HttpClient(HttpClient&& other);
         HttpClient& operator=(HttpClient&& other);
 
         void connect(const std::string& host);
@@ -23,5 +23,5 @@ class HttpClient {
         void shutdown();
     private:
         std::string host;
-        std::unique_ptr<socket_t> socket_ptr;
+        std::unique_ptr<socket_t> ssl_socket;
 };
