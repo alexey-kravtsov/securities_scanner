@@ -32,7 +32,7 @@ void HttpClient::connect(const std::string& host) {
     asio::io_service svc;
     ssl::context ctx(ssl::context::sslv23_client);
 
-    ssl_socket = std::unique_ptr<socket_t>(new socket_t { svc, ctx });
+    ssl_socket = std::make_unique<socket_t>(socket_t { svc, ctx });
     SSL_set_tlsext_host_name(ssl_socket->native_handle(), host.c_str());
 
     ip::tcp::resolver resolver(svc);
@@ -71,5 +71,5 @@ void HttpClient::shutdown() {
         std::cerr << "Error: " << e.what() << std::endl;
     }
 
-    ssl_socket.release();
+    ssl_socket.reset();
 }
