@@ -5,7 +5,7 @@
 #include <string>
 #include <memory>
 
-using socket_t = boost::asio::ssl::stream<boost::asio::ip::tcp::socket>;
+using socket_stream_t = boost::asio::ssl::stream<boost::asio::ip::tcp::socket>;
 
 class HttpClient {
     public:
@@ -23,5 +23,5 @@ class HttpClient {
         void shutdown();
     private:
         std::string host;
-        std::unique_ptr<socket_t> ssl_socket;
+        std::unique_ptr<socket_stream_t> ssl_socket_stream;
 };

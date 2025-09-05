@@ -11,6 +11,7 @@ project_source_files = [
 
 project_dependencies = [
   dependency('scanner', fallback : ['scanner', 'scanner_dep']),
+  dependency('config', fallback : ['config', 'config_dep']),
 ]
 
 executable(

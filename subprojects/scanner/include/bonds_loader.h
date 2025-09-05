@@ -1,4 +1,7 @@
+#include <bond_info.h>
+#include <vector>
+
 class BondsLoader {
     public:
-        void load();
+        std::vector<BondInfo> load();
 };

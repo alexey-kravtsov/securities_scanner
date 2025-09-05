@@ -1,24 +1,20 @@
 project(
-  'scanner',
+  'config',
   'cpp',
   version : '0.1',
   default_options : ['warning_level=3']
 )
 
 project_headers = [
-  'include/bond_info.h',
-  'include/bonds_loader.h',
-  'include/orders_loader.h',
+  'include/config.h'
 ]
 
 project_source_files = [
-  'src/bond_info.cpp',
-  'src/bonds_loader.cpp',
-  'src/orders_loader.cpp',
+  'src/config.cpp'
 ]
 
 project_dependencies = [
-  dependency('http', fallback : ['http', 'http_dep']),
+  dependency('yaml-cpp', static: true),
 ]
 
 
