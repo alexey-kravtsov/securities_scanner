@@ -15,7 +15,7 @@
       },
       "cwd": "${workspaceFolder}/${config:mesonbuild.buildFolder}",
       "program": "${workspaceFolder}/${config:mesonbuild.buildFolder}/securities_scanner",
-      "args": [],
+      "args": ["--config", "${workspaceFolder}/resources/application.yml"],
       "environment": [],
       "stopAtEntry": false,
       "preLaunchTask": "Meson: Build all targets",

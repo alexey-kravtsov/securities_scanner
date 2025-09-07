@@ -1,22 +1,27 @@
 project(
-  'scanner',
+  'loader',
   'cpp',
   version : '0.1',
   default_options : ['warning_level=3', 'cpp_std=c++23']
 )
 
 project_headers = [
-  'include/scanner.h',
+  'include/bond_info.h',
+  'include/bonds_loader.h',
+  'include/orders_loader.h',
 ]
 
 project_source_files = [
-  'src/scanner.cpp',
+  'src/bonds_loader_utils.h',
+  'src/bonds_loader.cpp',
+  'src/orders_loader.cpp',
 ]
 
 project_dependencies = [
   dependency('config', fallback : ['config', 'config_dep']),
   dependency('http', fallback : ['http', 'http_dep']),
-  dependency('loader', fallback : ['loader', 'loader_dep']),
+  
+  dependency('jsoncpp')
 ]
 
 

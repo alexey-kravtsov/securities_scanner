@@ -7,21 +7,34 @@
 
 using socket_stream_t = boost::asio::ssl::stream<boost::asio::ip::tcp::socket>;
 
-class HttpClient {
-    public:
-        HttpClient();
-        ~HttpClient();
+namespace http {
 
-        HttpClient(const HttpClient& other) = delete;
-        HttpClient& operator=(const HttpClient& other) = delete;
+    class HttpClient {
+        public:
+            HttpClient(const std::string& host);
+            HttpClient(const std::string& host, const std::string& auth);
+            ~HttpClient();
 
-        HttpClient(HttpClient&& other);
-        HttpClient& operator=(HttpClient&& other);
+            HttpClient(const HttpClient& other) = delete;
+            HttpClient& operator=(const HttpClient& other) = delete;
 
-        void connect(const std::string& host);
-        std::string get(const std::string& path);
-        void shutdown();
-    private:
-        std::string host;
-        std::unique_ptr<socket_stream_t> ssl_socket_stream;
-};
+            HttpClient(HttpClient&& other);
+            HttpClient& operator=(HttpClient&& other);
+
+            std::string get(const std::string& path);
+            std::string post(const std::string& path, const std::string& request);
+
+            void shutdown();
+        private:
+            const std::string host;
+            const std::string auth;
+            std::unique_ptr<boost::asio::io_service> service;
+            std::unique_ptr<socket_stream_t> ssl_socket_stream;
+
+            void connect();
+            std::string request(boost::beast::http::verb method, const std::string& path, const std::string& request);
+    };
+
+    class not_found : public std::exception {};
+
+}
