@@ -5,6 +5,8 @@ project(
   default_options : ['warning_level=3', 'cpp_std=c++23']
 )
 
+subproject('jsoncpp_static')
+
 project_source_files = [
   'src/main.cpp'
 ]
@@ -15,7 +17,8 @@ project_dependencies = [
   dependency('loader', fallback : ['loader', 'loader_dep']),
   dependency('scanner', fallback : ['scanner', 'scanner_dep']),
 
-  dependency('boost', modules: ['program_options'], static: true)
+  dependency('jsoncpp_static', static: true),
+  dependency('boost', modules: ['program_options'], static: true),
 ]
 
 executable(

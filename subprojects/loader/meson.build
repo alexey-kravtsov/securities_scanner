@@ -19,9 +19,8 @@ project_source_files = [
 
 project_dependencies = [
   dependency('config', fallback : ['config', 'config_dep']),
+  dependency('jsoncpp_static', static: true),
   dependency('http', fallback : ['http', 'http_dep']),
-  
-  dependency('jsoncpp')
 ]
 
 

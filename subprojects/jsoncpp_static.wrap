@@ -1,0 +1,7 @@
+[wrap-git]
+url = https://github.com/open-source-parsers/jsoncpp.git
+revision = 1.9.6
+depth = 1
+
+[provide]
+jsoncpp_static = jsoncpp_dep
