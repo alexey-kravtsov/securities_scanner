@@ -76,9 +76,9 @@ boost::optional<BondInfo> BondsLoader::loadBond(http::HttpClient& t_client, cons
         throw std::invalid_argument { "Unable to parse metadata response" };
     }
 
-    auto instrument = metadata_json.find("instrument");
+    auto instrument = metadata_json["instrument"];
     
-    auto isin = instrument->find("isin")->asString();
+    auto isin = instrument["isin"].asString();
 
     if (bond_isin != isin) {
         return boost::optional<BondInfo>{};;
@@ -86,15 +86,15 @@ boost::optional<BondInfo> BondsLoader::loadBond(http::HttpClient& t_client, cons
     
     BondMetadata metadata;
     metadata.isin = isin;
-    metadata.uid = instrument->find("uid")->asString();
-    metadata.name = instrument->find("name")->asString();
-    metadata.buy_available = instrument->find("buyAvailableFlag")->asBool();
-    metadata.sell_available = instrument->find("sellAvailableFlag")->asBool();
-    metadata.floating_coupon = instrument->find("floatingCouponFlag")->asBool();
-    metadata.amortization = instrument->find("amortizationFlag")->asBool();
-    metadata.iis = instrument->find("forIisFlag")->asBool();
+    metadata.uid = instrument["uid"].asString();
+    metadata.name = instrument["name"].asString();
+    metadata.buy_available = instrument["buyAvailableFlag"].asBool();
+    metadata.sell_available = instrument["sellAvailableFlag"].asBool();
+    metadata.floating_coupon = instrument["floatingCouponFlag"].asBool();
+    metadata.amortization = instrument["amortizationFlag"].asBool();
+    metadata.iis = instrument["forIisFlag"].asBool();
 
-    auto maturity_date_str = instrument->find("maturityDate")->asString();
+    auto maturity_date_str = instrument["maturityDate"].asString();
     std::chrono::system_clock::time_point maturity_date;
     std::istringstream is { maturity_date_str };
     is >> std::chrono::parse("%Y-%m-%dT%H:%M:%S", maturity_date);
