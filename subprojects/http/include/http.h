@@ -18,8 +18,8 @@ namespace http {
             HttpClient(const HttpClient& other) = delete;
             HttpClient& operator=(const HttpClient& other) = delete;
 
-            HttpClient(HttpClient&& other);
-            HttpClient& operator=(HttpClient&& other);
+            HttpClient(HttpClient&& other) = default;
+            HttpClient& operator=(HttpClient&& other) = default;
 
             std::string get(const std::string& path);
             std::string post(const std::string& path, const std::string& request);

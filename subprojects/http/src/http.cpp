@@ -25,10 +25,6 @@ HttpClient::~HttpClient() {
     }
 }
 
-HttpClient::HttpClient(HttpClient&& other) 
-    : host(std::move(other.host)),
-      ssl_socket_stream(std::move(other.ssl_socket_stream)) {}
-
 std::string HttpClient::get(const std::string& path) {
     return this->request(beast::http::verb::get, path, {});
 }

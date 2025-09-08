@@ -27,7 +27,7 @@ std::vector<BondInfo> BondsLoader::load() {
         std::cout << std::to_string(isin_set.size()) << std::endl;
     }
 
-    loadBond(t_client, "");
+    loadBond(t_client, "123");
 
     sl_client.shutdown();
     t_client.shutdown();
