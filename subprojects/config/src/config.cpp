@@ -17,7 +17,9 @@ Config Config::load(const std::string& file_name) {
         brokerNode["host"].as<std::string>(),
         brokerNode["auth"].as<std::string>(),
         brokerNode["metadata-path"].as<std::string>(),
-        brokerNode["metadata-request-template"].as<std::string>()
+        brokerNode["interest-path"].as<std::string>(),
+        brokerNode["coupons-path"].as<std::string>(),
+        brokerNode["price-path"].as<std::string>()
     };
 
     return Config {rank, broker};

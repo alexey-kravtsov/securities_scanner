@@ -15,7 +15,9 @@ class BrokerConfig {
         const std::string host;
         const std::string auth;
         const std::string metadata_path;
-        const std::string metadata_request_template;
+        const std::string interest_path;
+        const std::string coupons_path;
+        const std::string price_path;
 };
 
 class Config {

@@ -1,8 +1,6 @@
 #include <bonds_loader.h>
 
-#include "bonds_loader_utils.h"
-#include <json/value.h>
-#include <json/reader.h>
+#include "dto.h"
 #include <iostream>
 #include <unordered_set>
 #include <format>
@@ -10,32 +8,36 @@
 
 namespace beast = boost::beast;
 
-BondsLoader::BondsLoader(const Config& a_config) 
-: config {a_config}, 
-  rank_regex {std::regex {config.rank.regex}} {}
+const int MAX_PAGES_COUNT = 1;
+const int MIN_DAYS_TO_MATURITY = 100;
+
+BondsLoader::BondsLoader(
+    const Config& a_config, 
+    http::HttpClient& a_sl_client, 
+    http::HttpClient& a_t_client) 
+    : config {a_config}, 
+    sl_client { a_sl_client },
+    t_client { a_t_client },
+    rank_regex {std::regex {config.rank.regex}} {}
 
 std::vector<BondInfo> BondsLoader::load() {
-    auto sl_client = http::HttpClient(config.rank.host);
-    auto t_client = http::HttpClient(config.broker.host, config.broker.auth);
+    // for (int page = 1; page <= MAX_PAGES_COUNT; page++) {
+    //     auto isin_set = find(sl_client, page);
+    //     if (isin_set.size() == 0) {
+    //         break;
+    //     }
 
-    for (int page = 1; page <= MAX_PAGES_COUNT; page++) {
-        auto isin_set = find(sl_client, page);
-        if (isin_set.size() == 0) {
-            break;
-        }
+    //     std::cout << std::to_string(isin_set.size()) << std::endl;
+    // }
 
-        std::cout << std::to_string(isin_set.size()) << std::endl;
-    }
-
-    loadBond(t_client, "123");
+    load_bond("123");
 
     sl_client.shutdown();
-    t_client.shutdown();
 
     return {};
 }
 
-std::unordered_set<std::string> BondsLoader::find(http::HttpClient& sl_client,const int page) {
+std::unordered_set<std::string> BondsLoader::find(const int page) {
     std::unordered_set<std::string> isin_set;
 
     auto path = std::vformat(config.rank.path_template, std::make_format_args(page));
@@ -60,51 +62,64 @@ std::unordered_set<std::string> BondsLoader::find(http::HttpClient& sl_client,co
     return isin_set;
 }
 
-boost::optional<BondInfo> BondsLoader::loadBond(http::HttpClient& t_client, const std::string& bond_isin) {
+std::optional<BondInfo> BondsLoader::load_bond(const std::string& bond_isin) {
     std::string metadata_response;
 
     try {
-        auto metadata_request = std::vformat(config.broker.metadata_request_template, std::make_format_args(bond_isin));
-        metadata_response = t_client.post(config.broker.metadata_path, metadata_request);
+        BondMetadateRequest request { .id = bond_isin };
+        metadata_response = t_client.post(config.broker.metadata_path, to_json(request));
     } catch (http::not_found const& e) {
-        return boost::optional<BondInfo>{};
+        return std::optional<BondInfo>{};
     }
 
-    Json::Reader reader;
-    Json::Value metadata_json;
-    if (!reader.parse(metadata_response.c_str(), metadata_json)) {
-        throw std::invalid_argument { "Unable to parse metadata response" };
+    BondMetadataResponse metadata = parse<BondMetadataResponse>(metadata_response);
+
+    if (bond_isin != metadata.isin) {
+        return std::optional<BondInfo>{};
     }
 
-    auto instrument = metadata_json["instrument"];
-    
-    auto isin = instrument["isin"].asString();
+    time_point now = std::chrono::system_clock::now();
 
-    if (bond_isin != isin) {
-        return boost::optional<BondInfo>{};;
-    }
-    
-    BondMetadata metadata;
-    metadata.isin = isin;
-    metadata.uid = instrument["uid"].asString();
-    metadata.name = instrument["name"].asString();
-    metadata.buy_available = instrument["buyAvailableFlag"].asBool();
-    metadata.sell_available = instrument["sellAvailableFlag"].asBool();
-    metadata.floating_coupon = instrument["floatingCouponFlag"].asBool();
-    metadata.amortization = instrument["amortizationFlag"].asBool();
-    metadata.iis = instrument["forIisFlag"].asBool();
+    AccuredInterestRequest interest_request { .from = now, .to = now, .uid = metadata.uid };
+    auto interest_response = t_client.post(config.broker.interest_path, to_json(interest_request));
+    auto interest = parse<AccuredInterestResponse>(interest_response);
 
-    auto maturity_date_str = instrument["maturityDate"].asString();
-    std::chrono::system_clock::time_point maturity_date;
-    std::istringstream is { maturity_date_str };
-    is >> std::chrono::parse("%Y-%m-%dT%H:%M:%S", maturity_date);
-    if (is.fail()) {
-        throw std::invalid_argument { "Unable to parse date" + maturity_date_str };
+    CouponsRequest coupons_request { .from = now, .to = metadata.maturity_date, .uid = metadata.uid };
+    auto coupons_response = t_client.post(config.broker.coupons_path, to_json(coupons_request));
+    auto coupons = parse<CouponsResponse>(coupons_response);
+    
+    long cash_flow = metadata.nominal;
+    for (auto& coupon : coupons.coupons) {
+        cash_flow += coupon.interest;
     }
-    metadata.maturity_date = maturity_date;
-    
-    std::cout << metadata.uid << std::endl;
-    std::cout << metadata.maturity_date << std::endl;
-    
-    return {};
+
+    time_point maturity_date;
+    if (coupons.coupons.size() > 0) {
+        maturity_date = coupons.coupons[coupons.coupons.size() - 1].date;
+    } else {
+        maturity_date = metadata.maturity_date;
+    }
+    auto maturity_interval = maturity_date - std::chrono::system_clock::now();
+    int days_to_maturity = std::chrono::duration_cast<std::chrono::days>(maturity_interval).count();
+
+    if (!metadata.buy_available || 
+        !metadata.sell_available ||
+        metadata.floating_coupon ||
+        metadata.amortization ||
+        !metadata.iis ||
+        days_to_maturity < MIN_DAYS_TO_MATURITY) {
+        return std::optional<BondInfo>{};
+    }
+
+    return std::optional<BondInfo> {
+        BondInfo {
+            .isin = std::move(metadata.isin),
+            .uid = metadata.uid,
+            .name = std::move(metadata.name),
+            .accured_interest = interest.interest,
+            .nominal = metadata.nominal,
+            .cash_flow = cash_flow,
+            .days_to_maturity = days_to_maturity
+        }
+    };
 }

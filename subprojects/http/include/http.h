@@ -26,8 +26,8 @@ namespace http {
 
             void shutdown();
         private:
-            const std::string host;
-            const std::string auth;
+            const std::string& host;
+            const std::string& auth;
             std::unique_ptr<boost::asio::io_service> service;
             std::unique_ptr<socket_stream_t> ssl_socket_stream;
 

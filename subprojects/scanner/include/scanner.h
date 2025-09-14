@@ -5,7 +5,7 @@
 
 class Scanner {
     public:
-        Scanner(const Config& config);
+        Scanner(const Config& config, BondsLoader& bonds_loader, OrdersLoader& orders_loader);
 
         Scanner(const Scanner& other) = delete;
         Scanner& operator=(const Scanner& other) = delete;
@@ -14,6 +14,7 @@ class Scanner {
         void start();
     
     private:
-        std::unique_ptr<BondsLoader> bonds_loader;
-        std::unique_ptr<OrdersLoader> orders_loader;
+        const Config& config;
+        BondsLoader& bonds_loader;
+        OrdersLoader& orders_loader;
 };

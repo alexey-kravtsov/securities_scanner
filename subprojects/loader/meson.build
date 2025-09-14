@@ -12,7 +12,8 @@ project_headers = [
 ]
 
 project_source_files = [
-  'src/bonds_loader_utils.h',
+  'src/dto.h',
+  'src/dto.cpp',
   'src/bonds_loader.cpp',
   'src/orders_loader.cpp',
 ]

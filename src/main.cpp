@@ -15,7 +15,14 @@ int main(int argc, const char *argv[]) {
         notify(vm);
 
         Config config = Config::load(vm["config"].as<std::string>());
-        Scanner scanner(config);
+
+        auto sl_client = http::HttpClient(config.rank.host);
+        auto t_client = http::HttpClient(config.broker.host, config.broker.auth);
+
+        BondsLoader bonds_loader {config, sl_client, t_client};
+        OrdersLoader orders_loader {};
+
+        Scanner scanner {config, bonds_loader, orders_loader};
         scanner.init();
         scanner.start();
     }
