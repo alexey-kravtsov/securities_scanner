@@ -100,7 +100,8 @@ std::optional<BondInfo> BondsLoader::load_bond(const std::string& bond_isin) {
     auto interest_response = t_client.post(config.broker.interest_path, to_json(interest_request));
     auto interest = parse<AccuredInterestResponse>(interest_response);
 
-    CouponsRequest coupons_request { .from = now, .to = metadata.maturity_date, .uid = metadata.uid };
+    time_point coupon_start_date = now + std::chrono::days(1);
+    CouponsRequest coupons_request { .from = coupon_start_date, .to = metadata.maturity_date, .uid = metadata.uid };
     auto coupons_response = t_client.post(config.broker.coupons_path, to_json(coupons_request));
     auto coupons = parse<CouponsResponse>(coupons_response);
 

@@ -17,5 +17,5 @@ std::shared_ptr<BondsMap> Storage::get_bonds() {
 }
 
 double Storage::get_ytm() {
-    return 23.0;
+    return 22.0;
 }
