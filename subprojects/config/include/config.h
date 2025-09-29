@@ -1,5 +1,5 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef SECURITIES_SCANNER_CONFIG_H
+#define SECURITIES_SCANNER_CONFIG_H
 
 #include <string>
 
@@ -18,6 +18,8 @@ class BrokerConfig {
         const std::string interest_path;
         const std::string coupons_path;
         const std::string price_path;
+        const int instruments_rps;
+        const int price_rps;
 };
 
 class Config {
@@ -28,4 +30,4 @@ class Config {
         static Config load(const std::string& path);
 };
 
-#endif // CONFIG_H
+#endif // SECURITIES_SCANNER_CONFIG_H

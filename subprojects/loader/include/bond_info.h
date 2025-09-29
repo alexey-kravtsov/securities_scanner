@@ -1,3 +1,6 @@
+#ifndef SECURITIES_SCANNER_BOND_INFO_H
+#define SECURITIES_SCANNER_BOND_INFO_H
+
 #include <string>
 #include <boost/uuid/uuid.hpp>
 
@@ -11,3 +14,5 @@ class BondInfo {
         const long cash_flow;
         const int days_to_maturity;
 };
+
+#endif // SECURITIES_SCANNER_BOND_INFO_H

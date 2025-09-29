@@ -1,3 +1,6 @@
+#ifndef SECURITIES_SCANNER_BONDS_LOADER_H
+#define SECURITIES_SCANNER_BONDS_LOADER_H
+
 #include <bond_info.h>
 
 #include <config.h>
@@ -25,3 +28,5 @@ class BondsLoader {
         std::unordered_set<std::string> find(const int page);
         std::optional<BondInfo> load_bond(const std::string& isin);
 };
+
+#endif // SECURITIES_SCANNER_BONDS_LOADER_H

@@ -8,14 +8,15 @@ project(
 project_headers = [
   'include/bond_info.h',
   'include/bonds_loader.h',
-  'include/orders_loader.h',
+  'include/price_loader.h',
 ]
 
 project_source_files = [
   'src/dto.h',
   'src/dto.cpp',
+  'src/price_calc.h',
   'src/bonds_loader.cpp',
-  'src/orders_loader.cpp',
+  'src/price_loader.cpp',
 ]
 
 project_dependencies = [

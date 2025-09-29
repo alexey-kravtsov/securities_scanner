@@ -1,3 +1,6 @@
+#ifndef SECURITIES_SCANNER_LOADER_DTO_H
+#define SECURITIES_SCANNER_LOADER_DTO_H
+
 #include <boost/uuid/uuid.hpp>
 #include <chrono>
 #include <string>
@@ -6,7 +9,7 @@
 
 using time_point = std::chrono::system_clock::time_point;
 
-struct BondMetadateRequest {
+struct BondMetadataRequest {
     std::string id_type = "INSTRUMENT_ID_TYPE_TICKER";
     std::string class_code = "TQCB";
     std::string id;
@@ -41,6 +44,19 @@ struct AccuredInterestResponse {
     long interest;
 };
 
+struct PriceRequest {
+    std::vector<boost::uuids::uuid> instrument_id;
+};
+
+struct PriceResponseEntry {
+    boost::uuids::uuid instrument_id;
+    long price;
+};
+
+struct PriceResponse {
+    std::vector<PriceResponseEntry> last_prices;
+};
+
 struct Coupon {
     time_point date;
     long interest;
@@ -55,3 +71,5 @@ std::string to_json(const T& value);
 
 template <typename T>
 T parse(const std::string& json);
+
+#endif // SECURITIES_SCANNER_LOADER_DTO_H

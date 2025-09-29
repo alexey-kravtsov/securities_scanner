@@ -6,10 +6,12 @@ project(
 )
 
 project_headers = [
+  'include/storage.h',
   'include/scanner.h',
 ]
 
 project_source_files = [
+  'src/storage.cpp',
   'src/scanner.cpp',
 ]
 

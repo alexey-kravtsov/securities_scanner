@@ -6,11 +6,13 @@ project(
 )
 
 project_headers = [
-  'include/http.h'
+  'include/http.h',
+  'include/rate_limiter.h'
 ]
 
 project_source_files = [
-  'src/http.cpp'
+  'src/http.cpp',
+  'src/rate_limiter.cpp'
 ]
 
 project_dependencies = [

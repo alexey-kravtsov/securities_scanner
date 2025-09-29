@@ -1,9 +1,12 @@
+#ifndef SECURITIES_SCANNER_HTTP_H
+#define SECURITIES_SCANNER_HTTP_H
+
 #include <boost/asio.hpp>
 #include <boost/asio/ssl.hpp>
 #include <boost/beast.hpp>
-
 #include <string>
 #include <memory>
+#include <rate_limiter.h>
 
 using socket_stream_t = boost::asio::ssl::stream<boost::asio::ip::tcp::socket>;
 
@@ -12,7 +15,7 @@ namespace http {
     class HttpClient {
         public:
             HttpClient(const std::string& host);
-            HttpClient(const std::string& host, const std::string& auth);
+            HttpClient(const std::string& host, const std::string& auth, const int rps);
             ~HttpClient();
 
             HttpClient(const HttpClient& other) = delete;
@@ -26,8 +29,9 @@ namespace http {
 
             void shutdown();
         private:
-            const std::string& host;
-            const std::string& auth;
+            const std::string host;
+            const std::string auth;
+            std::optional<RateLimiter> rate_limiter;
             std::unique_ptr<boost::asio::io_service> service;
             std::unique_ptr<socket_stream_t> ssl_socket_stream;
 
@@ -38,3 +42,5 @@ namespace http {
     class not_found : public std::exception {};
 
 }
+
+#endif // SECURITIES_SCANNER_HTTP_H

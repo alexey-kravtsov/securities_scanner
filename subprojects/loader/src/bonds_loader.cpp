@@ -8,7 +8,7 @@
 
 namespace beast = boost::beast;
 
-const int MAX_PAGES_COUNT = 1;
+const int MAX_PAGES_COUNT = 5;
 const int MIN_DAYS_TO_MATURITY = 100;
 
 BondsLoader::BondsLoader(
@@ -21,20 +21,36 @@ BondsLoader::BondsLoader(
     rank_regex {std::regex {config.rank.regex}} {}
 
 std::vector<BondInfo> BondsLoader::load() {
-    // for (int page = 1; page <= MAX_PAGES_COUNT; page++) {
-    //     auto isin_set = find(sl_client, page);
-    //     if (isin_set.size() == 0) {
-    //         break;
-    //     }
+    auto result = std::vector<BondInfo>();
+    auto isins = std::unordered_set<std::string>();
 
-    //     std::cout << std::to_string(isin_set.size()) << std::endl;
-    // }
+    for (int page = 1; page <= MAX_PAGES_COUNT; page++) {
+        std::cout << "Page: " << std::to_string(page) << std::endl;
 
-    load_bond("123");
+        auto isin_set = find(page);
+        sl_client.shutdown();
+        if (isin_set.size() == 0) {
+            break;
+        }
 
-    sl_client.shutdown();
+        for (auto& isin : isin_set) {
+            if (isins.contains(isin)) {
+                continue;
+            }
 
-    return {};
+            auto bond = load_bond(isin);
+            if (!bond.has_value()) {
+                continue;
+            }
+
+            isins.insert(isin);
+            result.push_back(bond.value());
+        }
+    }
+
+    std::cout << "Total: " << std::to_string(result.size()) << std::endl;
+
+    return result;
 }
 
 std::unordered_set<std::string> BondsLoader::find(const int page) {
@@ -66,7 +82,7 @@ std::optional<BondInfo> BondsLoader::load_bond(const std::string& bond_isin) {
     std::string metadata_response;
 
     try {
-        BondMetadateRequest request { .id = bond_isin };
+        BondMetadataRequest request { .id = bond_isin };
         metadata_response = t_client.post(config.broker.metadata_path, to_json(request));
     } catch (http::not_found const& e) {
         return std::optional<BondInfo>{};
@@ -87,7 +103,7 @@ std::optional<BondInfo> BondsLoader::load_bond(const std::string& bond_isin) {
     CouponsRequest coupons_request { .from = now, .to = metadata.maturity_date, .uid = metadata.uid };
     auto coupons_response = t_client.post(config.broker.coupons_path, to_json(coupons_request));
     auto coupons = parse<CouponsResponse>(coupons_response);
-    
+
     long cash_flow = metadata.nominal;
     for (auto& coupon : coupons.coupons) {
         cash_flow += coupon.interest;
@@ -95,12 +111,18 @@ std::optional<BondInfo> BondsLoader::load_bond(const std::string& bond_isin) {
 
     time_point maturity_date;
     if (coupons.coupons.size() > 0) {
-        maturity_date = coupons.coupons[coupons.coupons.size() - 1].date;
+        time_point max_date = coupons.coupons[0].date;
+        for (auto& coupon : coupons.coupons) {
+            if (max_date < coupon.date) {
+                max_date = coupon.date;
+            }
+        }
+        maturity_date = max_date;
     } else {
         maturity_date = metadata.maturity_date;
     }
     auto maturity_interval = maturity_date - std::chrono::system_clock::now();
-    int days_to_maturity = std::chrono::duration_cast<std::chrono::days>(maturity_interval).count();
+    int days_to_maturity = std::chrono::duration_cast<std::chrono::days>(maturity_interval).count() + 3;
 
     if (!metadata.buy_available || 
         !metadata.sell_available ||

@@ -13,9 +13,11 @@ using namespace http;
 
 const int HTTP_CLIENT_MAX_ATTEMPTS = 3;
 
-HttpClient::HttpClient(const std::string& a_host) : HttpClient(a_host, {}) {}
+HttpClient::HttpClient(const std::string& a_host) 
+    : host {a_host}, auth {}, rate_limiter {} {}
 
-HttpClient::HttpClient(const std::string& a_host, const std::string& a_auth) : host {a_host}, auth {a_auth} {}
+HttpClient::HttpClient(const std::string& a_host, const std::string& a_auth, const int rps) 
+    : host {a_host}, auth {a_auth}, rate_limiter {RateLimiter(rps)} {}
 
 HttpClient::~HttpClient() {
     try {
@@ -34,6 +36,10 @@ std::string HttpClient::post(const std::string& path, const std::string& request
 }
 
 std::string HttpClient::request(beast::http::verb method, const std::string& path, const std::string& request) {
+    if (rate_limiter.has_value()) {
+        rate_limiter.value().acquire();
+    }
+
     if (!ssl_socket_stream.get()) {
         connect();
     }

@@ -2,6 +2,7 @@
 
 #include <boost/uuid/string_generator.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include "price_calc.h"
 
 void read_json_value(const std::string& json, Json::Value& out_value) {
     Json::Reader reader;
@@ -38,12 +39,8 @@ time_point parse_iso_8601(const std::string& date_str) {
     return date;
 }
 
-long calc_price(const long units, const long nano) {
-    return units * 100 + nano / 10000000;
-}
-
 template<>
-std::string to_json(const BondMetadateRequest& request) {
+std::string to_json(const BondMetadataRequest& request) {
     Json::Value root;
     root["idType"] = request.id_type;
     root["classCode"] = request.class_code;
@@ -69,6 +66,17 @@ std::string to_json(const CouponsRequest& request) {
     root["to"] = date_iso_8601(request.to);
     root["instrumentId"] = boost::uuids::to_string(request.uid);
 
+    return write_json_value(root);
+}
+
+template<>
+std::string to_json(const PriceRequest& request) {
+    Json::Value root;
+    Json::Value uids(Json::arrayValue);
+    for (unsigned int i = 0; i < request.instrument_id.size(); i++) {
+        uids[i] = boost::uuids::to_string(request.instrument_id[i]);
+    }
+    root["instrumentId"] = uids;
     return write_json_value(root);
 }
 
@@ -139,4 +147,22 @@ CouponsResponse parse<CouponsResponse>(const std::string& json_str) {
     }
 
     return CouponsResponse { .coupons = std::move(coupons) };
+}
+
+template<>
+PriceResponse parse<PriceResponse>(const std::string& json_str) {
+    Json::Value json;
+    read_json_value(json_str, json);
+
+    auto price_entries = std::vector<PriceResponseEntry> {};
+    auto response_entries = json["lastPrices"];
+    for (auto& response_entry : response_entries) {
+        auto uid = parse_uid(response_entry["instrumentUid"].asString());
+        auto price = response_entry["price"];
+        auto units = std::stoi(price["units"].asString());
+        auto nano = price["nano"].asInt64();
+        price_entries.push_back(PriceResponseEntry { uid, calc_price(units, nano) });
+    }
+
+    return PriceResponse { .last_prices = std::move(price_entries) };
 }

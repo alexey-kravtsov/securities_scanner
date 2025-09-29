@@ -17,12 +17,17 @@ int main(int argc, const char *argv[]) {
         Config config = Config::load(vm["config"].as<std::string>());
 
         auto sl_client = http::HttpClient(config.rank.host);
-        auto t_client = http::HttpClient(config.broker.host, config.broker.auth);
 
-        BondsLoader bonds_loader {config, sl_client, t_client};
-        OrdersLoader orders_loader {};
+        auto& broker_conf = config.broker;
+        auto t_instruments_client = http::HttpClient(broker_conf.host, broker_conf.auth, broker_conf.instruments_rps);
+        auto t_price_client = http::HttpClient(broker_conf.host, broker_conf.auth, broker_conf.price_rps);
 
-        Scanner scanner {config, bonds_loader, orders_loader};
+        BondsLoader bonds_loader {config, sl_client, t_instruments_client};
+        PriceLoader price_loader {config, t_price_client };
+
+        Storage storage {bonds_loader};
+
+        Scanner scanner {config, storage, price_loader};
         scanner.init();
         scanner.start();
     }
