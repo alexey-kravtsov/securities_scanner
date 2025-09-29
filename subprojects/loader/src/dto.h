@@ -36,6 +36,7 @@ struct BondMetadataResponse {
     bool sell_available;
     bool floating_coupon;
     bool amortization;
+    bool subordinated;
     bool iis;
     time_point maturity_date;
 };

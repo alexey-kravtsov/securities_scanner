@@ -8,7 +8,7 @@
 
 namespace beast = boost::beast;
 
-const int MAX_PAGES_COUNT = 5;
+const int MAX_PAGES_COUNT = 100;
 const int MIN_DAYS_TO_MATURITY = 100;
 
 BondsLoader::BondsLoader(
@@ -128,6 +128,7 @@ std::optional<BondInfo> BondsLoader::load_bond(const std::string& bond_isin) {
         !metadata.sell_available ||
         metadata.floating_coupon ||
         metadata.amortization ||
+        metadata.subordinated ||
         !metadata.iis ||
         days_to_maturity < MIN_DAYS_TO_MATURITY) {
         return std::optional<BondInfo>{};

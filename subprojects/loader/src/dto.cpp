@@ -87,24 +87,23 @@ BondMetadataResponse parse<BondMetadataResponse>(const std::string& json_str) {
 
     auto instrument = json["instrument"];
     
-    BondMetadataResponse metadata;
-    metadata.isin = instrument["isin"].asString();
-    metadata.uid = parse_uid(instrument["uid"].asString());
-    metadata.name = instrument["name"].asString();
-
     auto nominal = instrument["nominal"];
     auto units = std::stoi(nominal["units"].asString());
     auto nano = nominal["nano"].asInt64();
-    metadata.nominal = calc_price(units, nano);
-
-    metadata.buy_available = instrument["buyAvailableFlag"].asBool();
-    metadata.sell_available = instrument["sellAvailableFlag"].asBool();
-    metadata.floating_coupon = instrument["floatingCouponFlag"].asBool();
-    metadata.amortization = instrument["amortizationFlag"].asBool();
-    metadata.iis = instrument["forIisFlag"].asBool();
-    metadata.maturity_date = parse_iso_8601(instrument["maturityDate"].asString());
     
-    return metadata;
+    return BondMetadataResponse {
+        .isin = instrument["isin"].asString(),
+        .uid = parse_uid(instrument["uid"].asString()),
+        .name = instrument["name"].asString(),
+        .nominal = calc_price(units, nano),
+        .buy_available = instrument["buyAvailableFlag"].asBool(),
+        .sell_available = instrument["sellAvailableFlag"].asBool(),
+        .floating_coupon = instrument["floatingCouponFlag"].asBool(),
+        .amortization = instrument["amortizationFlag"].asBool(),
+        .subordinated = instrument["subordinatedFlag"].asBool(),
+        .iis = instrument["forIisFlag"].asBool(),
+        .maturity_date = parse_iso_8601(instrument["maturityDate"].asString())
+    };
 }
 
 template<>
@@ -158,6 +157,9 @@ PriceResponse parse<PriceResponse>(const std::string& json_str) {
     auto response_entries = json["lastPrices"];
     for (auto& response_entry : response_entries) {
         auto uid = parse_uid(response_entry["instrumentUid"].asString());
+        if (!response_entry.isMember("price")) {
+            continue;
+        }
         auto price = response_entry["price"];
         auto units = std::stoi(price["units"].asString());
         auto nano = price["nano"].asInt64();
