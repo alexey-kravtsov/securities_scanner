@@ -1,11 +1,11 @@
 #ifndef SECURITIES_SCANNER_SCANNER_H
 #define SECURITIES_SCANNER_SCANNER_H
 
-#include <config.h>
+#include <sscan/config.h>
 #include <memory>
-#include <bonds_loader.h>
-#include <price_loader.h>
-#include <storage.h>
+#include <sscan/bonds_loader.h>
+#include <sscan/price_loader.h>
+#include <sscan/storage.h>
 
 class Scanner {
     public:

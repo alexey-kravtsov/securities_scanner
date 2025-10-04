@@ -2,7 +2,7 @@
 #define SECURITIES_SCANNER_STORAGE_H
 
 #include <memory>
-#include <bonds_loader.h>
+#include <sscan/bonds_loader.h>
 
 using BondsMap = std::unordered_map<boost::uuids::uuid, BondInfo, boost::hash<boost::uuids::uuid>>;
 

@@ -1,4 +1,4 @@
-#include <config.h>
+#include <sscan/config.h>
 
 #include <yaml-cpp/yaml.h>
 

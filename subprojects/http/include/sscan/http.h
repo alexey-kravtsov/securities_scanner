@@ -6,7 +6,7 @@
 #include <boost/beast.hpp>
 #include <string>
 #include <memory>
-#include <rate_limiter.h>
+#include <sscan/rate_limiter.h>
 
 using socket_stream_t = boost::asio::ssl::stream<boost::asio::ip::tcp::socket>;
 

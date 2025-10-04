@@ -1,4 +1,4 @@
-#include <bonds_loader.h>
+#include <sscan/bonds_loader.h>
 
 #include "dto.h"
 #include <iostream>
@@ -8,17 +8,14 @@
 
 namespace beast = boost::beast;
 
-const int MAX_PAGES_COUNT = 100;
-const int MIN_DAYS_TO_MATURITY = 100;
+const int MAX_PAGES_COUNT = 2;
+const int MIN_DAYS_TO_MATURITY = 30;
 
-BondsLoader::BondsLoader(
-    const Config& a_config, 
-    http::HttpClient& a_sl_client, 
-    http::HttpClient& a_t_client) 
-    : config {a_config}, 
-    sl_client { a_sl_client },
-    t_client { a_t_client },
-    rank_regex {std::regex {config.rank.regex}} {}
+BondsLoader::BondsLoader(const Config& a_config) : 
+    config {a_config},
+    sl_client {http::HttpClient{config.rank.host}},
+    t_client {http::HttpClient{config.broker.host, config.broker.auth, config.broker.instruments_rps}},
+    rank_regex {std::regex {config.rank.regex}} {};
 
 std::vector<BondInfo> BondsLoader::load() {
     auto result = std::vector<BondInfo>();
