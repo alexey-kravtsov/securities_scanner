@@ -6,7 +6,7 @@ project(
 )
 
 project_headers = [
-  'include/config.h'
+  'include/sscan/config.h'
 ]
 
 project_source_files = [

@@ -22,10 +22,16 @@ class BrokerConfig {
         const int price_rps;
 };
 
+class TgBotConfig {
+    public:
+        const std::string token;
+};
+
 class Config {
     public:
         RankConfig rank;
         BrokerConfig broker;
+        TgBotConfig tgbot;
 
         static Config load(const std::string& path);
 };

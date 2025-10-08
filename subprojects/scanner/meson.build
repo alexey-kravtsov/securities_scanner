@@ -6,8 +6,8 @@ project(
 )
 
 project_headers = [
-  'include/storage.h',
-  'include/scanner.h',
+  'include/sscan/storage.h',
+  'include/sscan/scanner.h',
 ]
 
 project_source_files = [

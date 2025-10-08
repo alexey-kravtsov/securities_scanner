@@ -6,9 +6,9 @@ project(
 )
 
 project_headers = [
-  'include/bond_info.h',
-  'include/bonds_loader.h',
-  'include/price_loader.h',
+  'include/sscan/bond_info.h',
+  'include/sscan/bonds_loader.h',
+  'include/sscan/price_loader.h',
 ]
 
 project_source_files = [

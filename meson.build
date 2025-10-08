@@ -16,6 +16,7 @@ project_dependencies = [
   dependency('http', fallback : ['http', 'http_dep']),
   dependency('loader', fallback : ['loader', 'loader_dep']),
   dependency('scanner', fallback : ['scanner', 'scanner_dep']),
+  dependency('tgbot-cpp', fallback: ['tgbot-cpp', 'tgbot_dep']),
 
   dependency('jsoncpp_static', static: true),
   dependency('boost', modules: ['program_options'], static: true),

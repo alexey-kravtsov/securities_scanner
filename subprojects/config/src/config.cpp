@@ -4,15 +4,17 @@
 
 Config Config::load(const std::string& file_name) {
     auto applicationNode = YAML::LoadFile(file_name)["application"];
-    auto rankNode = applicationNode["rank"];
-    auto brokerNode = applicationNode["broker"];
+    
+    
 
+    auto rankNode = applicationNode["rank"];
     RankConfig rank {
         .host = rankNode["host"].as<std::string>(),
         .path_template = rankNode["path-template"].as<std::string>(),
         .regex = rankNode["regex"].as<std::string>(),
     };
 
+    auto brokerNode = applicationNode["broker"];
     BrokerConfig broker {
         .host = brokerNode["host"].as<std::string>(),
         .auth = brokerNode["auth"].as<std::string>(),
@@ -24,5 +26,10 @@ Config Config::load(const std::string& file_name) {
         .price_rps = brokerNode["price-rps"].as<int>(),
     };
 
-    return Config {rank, broker};
+    auto tgbotNode = applicationNode["tgbot"];
+    TgBotConfig tgbot {
+        .token = tgbotNode["token"].as<std::string>()
+    };
+
+    return Config {rank, broker, tgbot};
 }

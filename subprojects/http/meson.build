@@ -6,8 +6,8 @@ project(
 )
 
 project_headers = [
-  'include/http.h',
-  'include/rate_limiter.h'
+  'include/sscan/http.h',
+  'include/sscan/rate_limiter.h'
 ]
 
 project_source_files = [
