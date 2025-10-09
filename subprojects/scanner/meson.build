@@ -6,7 +6,6 @@ project(
 )
 
 project_headers = [
-  'include/sscan/storage.h',
   'include/sscan/scanner.h',
 ]
 

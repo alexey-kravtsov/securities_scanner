@@ -8,7 +8,7 @@
 
 namespace beast = boost::beast;
 
-const int MAX_PAGES_COUNT = 2;
+const int MAX_PAGES_COUNT = 50;
 const int MIN_DAYS_TO_MATURITY = 30;
 
 BondsLoader::BondsLoader(const Config& a_config) : 
