@@ -2,24 +2,24 @@
 #define SECURITIES_SCANNER_SCANNER_H
 
 #include <sscan/config.h>
-#include <memory>
 #include <sscan/bonds_loader.h>
 #include <sscan/price_loader.h>
+#include <boost/asio/thread_pool.hpp>
+#include <semaphore>
 
 class Scanner {
     public:
-        Scanner(const Config& config, BondsLoader& bonds_loader, PriceLoader& price_loader);
+        Scanner(const Config& config, BondsLoader& bonds_loader, PriceLoader& price_loader, boost::asio::thread_pool& thread_pool);
 
         Scanner(const Scanner& other) = delete;
         Scanner& operator=(const Scanner& other) = delete;
 
-        void init();
         void start();
-    
     private:
 
         using BondsMap = std::unordered_map<boost::uuids::uuid, BondInfo, boost::hash<boost::uuids::uuid>>;
         using UidSet = std::vector<boost::uuids::uuid>;
+        using time_point = std::chrono::time_point<std::chrono::local_t, std::chrono::hours>;
 
         class Bonds {
             public:
@@ -48,6 +48,18 @@ class Scanner {
         const Config& config;
         Storage storage;
         PriceLoader& price_loader;
+        boost::asio::thread_pool& thread_pool;
+        
+        const std::chrono::time_zone* tz;
+        time_point bonds_update_timestamp;
+        std::counting_semaphore<1> bonds_semaphore;
+
+        time_point price_update_timestamp;
+        std::counting_semaphore<1> price_semaphore;
+
+        void update_bonds();
+        void update_bonds_timestamp();
+        void update_price();
 };
 
 #endif // SECURITIES_SCANNER_SCANNER_H

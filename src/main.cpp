@@ -3,10 +3,45 @@
 #include <boost/program_options.hpp>
 #include <tgbot/tgbot.h>
 
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks/text_ostream_backend.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/console.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+
+namespace logging = boost::log;
+namespace sinks = boost::log::sinks;
+namespace keywords = boost::log::keywords;
+namespace expr = boost::log::expressions;
 namespace opts = boost::program_options;
+
+void init_logging()
+{
+    logging::add_console_log(
+        std::cout,
+        keywords::format = "[%TimeStamp%]: %Message%"
+    );
+
+    logging::add_file_log(
+        keywords::file_name = "service_%N.log",                                        
+        keywords::rotation_size = 256 * 1024,
+        keywords::time_based_rotation = sinks::file::rotation_at_time_interval(boost::posix_time::hours(24)), 
+        keywords::format = "[%TimeStamp%]: %Message%"                                 
+    );
+
+    logging::core::get()->set_filter(
+        logging::trivial::severity >= logging::trivial::info
+    );
+
+    logging::add_common_attributes();
+}
 
 int main(int argc, const char *argv[]) {
     try {
+        init_logging();
+
         opts::options_description desc{"Options"};
         desc.add_options()
             ("config", opts::value<std::string>()->default_value("application.yml"), "Config file");
@@ -43,11 +78,13 @@ int main(int argc, const char *argv[]) {
         PriceLoader price_loader {config};
 
         Scanner scanner {config, bonds_loader, price_loader};
-        scanner.init();
+
+        BOOST_LOG_TRIVIAL(info) << "Starting securities scanner";
+
         scanner.start();
     }
     catch (const std::exception &ex) {
-        std::cerr << ex.what() << std::endl;
+        BOOST_LOG_TRIVIAL(error) << ex.what();
         return 1;
     }
 }

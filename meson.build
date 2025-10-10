@@ -19,7 +19,7 @@ project_dependencies = [
 
   dependency('tgbot-cpp', fallback: ['tgbot-cpp', 'TgBot_dep'], static: true),
   dependency('jsoncpp_static', static: true),
-  dependency('boost', modules: ['program_options'], static: true),
+  dependency('boost', modules: ['log', 'log_setup', 'thread', 'filesystem', 'program_options'], static: true),
 ]
 
 executable(

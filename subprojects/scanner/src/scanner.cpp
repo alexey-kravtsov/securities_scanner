@@ -1,6 +1,7 @@
 #include <sscan/scanner.h>
 #include <iostream>
-#include <boost/uuid/uuid_io.hpp>
+#include <boost/asio/post.hpp>
+#include <boost/log/trivial.hpp>
 
 class BondYield {
     public:
@@ -10,14 +11,50 @@ class BondYield {
         double ytm;
 };
 
-Scanner::Scanner(const Config& a_config, BondsLoader& a_bonds_loader, PriceLoader& a_price_loader) 
-    : config { a_config }, storage { a_bonds_loader }, price_loader { a_price_loader } {}
-
-void Scanner::init() {
-    storage.load();
-}
+Scanner::Scanner(
+    const Config& a_config, 
+    BondsLoader& a_bonds_loader, 
+    PriceLoader& a_price_loader,
+    boost::asio::thread_pool& a_pool) 
+    : config { a_config },
+    storage { a_bonds_loader },
+    price_loader { a_price_loader },
+    thread_pool { a_pool },
+    tz { std::chrono::locate_zone("Europe/Moscow") },
+    bonds_update_timestamp {},
+    bonds_semaphore {1},
+    price_update_timestamp {},
+    price_semaphore {1} {}
 
 void Scanner::start() {
+    while (true) {
+        auto now = std::chrono::system_clock::now();
+        auto bonds_updated_hours_ago = std::chrono::duration_cast<std::chrono::hours>(now - bonds_update_timestamp).count();
+        if (bonds_updated_hours_ago >= 24 && bonds_semaphore.try_acquire()) {
+            boost::asio::post(thread_pool, [&]() {update_bonds();});
+        }
+    }
+}
+
+void Scanner::update_bonds() {
+    try {
+        storage.load();
+        update_bonds_timestamp();
+    } catch (const std::exception &ex) {
+        BOOST_LOG_TRIVIAL(error) << ex.what();
+    }
+
+    bonds_semaphore.release();
+}
+
+void Scanner::update_bonds_timestamp() {
+    std::chrono::zoned_time zt(tz, std::chrono::system_clock::now());
+    auto local_day = std::chrono::floor<std::chrono::days>(zt.get_local_time());
+    auto t = local_day + std::chrono::hours(8);
+    bonds_update_timestamp = 
+}
+
+void Scanner::update_price() {
     auto bonds = storage.get_bonds();
     auto prices = price_loader.load(bonds->bonds_uids);
 
