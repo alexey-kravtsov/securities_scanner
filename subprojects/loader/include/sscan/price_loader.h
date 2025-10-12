@@ -3,7 +3,11 @@
 
 #include <sscan/config.h>
 #include <sscan/http.h>
+#include <unordered_map>
+#include <vector>
+#include <boost/functional/hash.hpp>
 #include <boost/uuid/uuid.hpp>
+#include <memory>
 
 using PriceMap = std::unordered_map<boost::uuids::uuid, long, boost::hash<boost::uuids::uuid>>;
 

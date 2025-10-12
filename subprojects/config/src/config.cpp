@@ -4,14 +4,20 @@
 
 Config Config::load(const std::string& file_name) {
     auto applicationNode = YAML::LoadFile(file_name)["application"];
-    
-    
+
+    auto logNode = applicationNode["log"];
+    LogConfig log {
+        .level = logNode["level"].as<std::string>(),
+        .format = logNode["format"].as<std::string>()
+    };
 
     auto rankNode = applicationNode["rank"];
     RankConfig rank {
         .host = rankNode["host"].as<std::string>(),
         .path_template = rankNode["path-template"].as<std::string>(),
         .regex = rankNode["regex"].as<std::string>(),
+        .max_pages = rankNode["max-pages"].as<int>(),
+        .min_days_to_maturity = rankNode["min-days-to-maturity"].as<int>()
     };
 
     auto brokerNode = applicationNode["broker"];
@@ -24,6 +30,7 @@ Config Config::load(const std::string& file_name) {
         .price_path = brokerNode["price-path"].as<std::string>(),
         .instruments_rps = brokerNode["instruments-rps"].as<int>(),
         .price_rps = brokerNode["price-rps"].as<int>(),
+        .timezone = brokerNode["timezone"].as<std::string>(),
     };
 
     auto tgbotNode = applicationNode["tgbot"];
@@ -31,5 +38,5 @@ Config Config::load(const std::string& file_name) {
         .token = tgbotNode["token"].as<std::string>()
     };
 
-    return Config {rank, broker, tgbot};
+    return Config {log, rank, broker, tgbot};
 }

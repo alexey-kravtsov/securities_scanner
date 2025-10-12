@@ -7,11 +7,12 @@
 #include <sscan/http.h>
 #include <unordered_set>
 #include <regex>
+#include <memory>
+#include <vector>
 
 class BondsLoader {
     public:
-        BondsLoader(
-            const Config& config);
+        BondsLoader(const Config& config);
 
         BondsLoader(const BondsLoader& other) = delete;
         BondsLoader& operator=(const BondsLoader& other) = delete;

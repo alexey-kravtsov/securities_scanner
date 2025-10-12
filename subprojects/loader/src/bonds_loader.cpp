@@ -4,12 +4,11 @@
 #include <iostream>
 #include <unordered_set>
 #include <format>
+#include <boost/beast.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/log/trivial.hpp>
 
 namespace beast = boost::beast;
-
-const int MAX_PAGES_COUNT = 50;
-const int MIN_DAYS_TO_MATURITY = 30;
 
 BondsLoader::BondsLoader(const Config& a_config) : 
     config {a_config},
@@ -21,8 +20,8 @@ std::vector<BondInfo> BondsLoader::load() {
     auto result = std::vector<BondInfo>();
     auto isins = std::unordered_set<std::string>();
 
-    for (int page = 1; page <= MAX_PAGES_COUNT; page++) {
-        std::cout << "Page: " << std::to_string(page) << std::endl;
+    for (int page = 1; page <= config.rank.max_pages; page++) {
+        BOOST_LOG_TRIVIAL(debug) << "Page: " << std::to_string(page);
 
         auto isin_set = find(page);
         sl_client.shutdown();
@@ -45,7 +44,7 @@ std::vector<BondInfo> BondsLoader::load() {
         }
     }
 
-    std::cout << "Total: " << std::to_string(result.size()) << std::endl;
+    BOOST_LOG_TRIVIAL(debug) << "Total bonds loaded: " << std::to_string(result.size());
 
     return result;
 }
@@ -128,7 +127,7 @@ std::optional<BondInfo> BondsLoader::load_bond(const std::string& bond_isin) {
         metadata.amortization ||
         metadata.subordinated ||
         !metadata.iis ||
-        days_to_maturity < MIN_DAYS_TO_MATURITY) {
+        days_to_maturity < config.rank.min_days_to_maturity) {
         return std::optional<BondInfo>{};
     }
 

@@ -13,7 +13,6 @@ project_source_files = [
 
 project_dependencies = [
   dependency('config', fallback : ['config', 'config_dep']),
-  dependency('http', fallback : ['http', 'http_dep']),
   dependency('loader', fallback : ['loader', 'loader_dep']),
   dependency('scanner', fallback : ['scanner', 'scanner_dep']),
 

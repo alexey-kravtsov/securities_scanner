@@ -3,11 +3,19 @@
 
 #include <string>
 
+class LogConfig {
+    public:
+        const std::string level;
+        const std::string format;
+};
+
 class RankConfig {
     public:
         const std::string host;
         const std::string path_template;
         const std::string regex;
+        const int max_pages;
+        const int min_days_to_maturity;
 };
 
 class BrokerConfig {
@@ -20,6 +28,7 @@ class BrokerConfig {
         const std::string price_path;
         const int instruments_rps;
         const int price_rps;
+        const std::string timezone;
 };
 
 class TgBotConfig {
@@ -29,6 +38,7 @@ class TgBotConfig {
 
 class Config {
     public:
+        LogConfig log;
         RankConfig rank;
         BrokerConfig broker;
         TgBotConfig tgbot;

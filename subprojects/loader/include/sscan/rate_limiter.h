@@ -21,7 +21,7 @@ namespace http {
             int requests;
             std::chrono::system_clock::time_point last_reset;
     };
-
+    
 }
 
 #endif // SECURITIES_SCANNER_RATE_LIMITER_H

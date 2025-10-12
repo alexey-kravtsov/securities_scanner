@@ -6,6 +6,8 @@ project(
 )
 
 project_headers = [
+  'include/sscan/http.h',
+  'include/sscan/rate_limiter.h',
   'include/sscan/bond_info.h',
   'include/sscan/bonds_loader.h',
   'include/sscan/price_loader.h',
@@ -14,6 +16,8 @@ project_headers = [
 project_source_files = [
   'src/dto.h',
   'src/dto.cpp',
+  'src/http.cpp',
+  'src/rate_limiter.cpp',
   'src/price_calc.h',
   'src/bonds_loader.cpp',
   'src/price_loader.cpp',
@@ -22,7 +26,6 @@ project_source_files = [
 project_dependencies = [
   dependency('config', fallback : ['config', 'config_dep']),
   dependency('jsoncpp_static', static: true),
-  dependency('http', fallback : ['http', 'http_dep']),
 ]
 
 

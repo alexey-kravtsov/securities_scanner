@@ -17,22 +17,23 @@ namespace keywords = boost::log::keywords;
 namespace expr = boost::log::expressions;
 namespace opts = boost::program_options;
 
-void init_logging()
-{
+void init_logging(const LogConfig& config) {
     logging::add_console_log(
         std::cout,
-        keywords::format = "[%TimeStamp%]: %Message%"
+        keywords::format = config.format
     );
 
     logging::add_file_log(
         keywords::file_name = "service_%N.log",                                        
         keywords::rotation_size = 256 * 1024,
         keywords::time_based_rotation = sinks::file::rotation_at_time_interval(boost::posix_time::hours(24)), 
-        keywords::format = "[%TimeStamp%]: %Message%"                                 
+        keywords::format = config.format                                
     );
 
+    boost::log::trivial::severity_level severity;
+    std::istringstream{config.level} >> severity;
     logging::core::get()->set_filter(
-        logging::trivial::severity >= logging::trivial::info
+        logging::trivial::severity >= severity
     );
 
     logging::add_common_attributes();
@@ -40,8 +41,6 @@ void init_logging()
 
 int main(int argc, const char *argv[]) {
     try {
-        init_logging();
-
         opts::options_description desc{"Options"};
         desc.add_options()
             ("config", opts::value<std::string>()->default_value("application.yml"), "Config file");
@@ -51,6 +50,8 @@ int main(int argc, const char *argv[]) {
         notify(vm);
 
         Config config = Config::load(vm["config"].as<std::string>());
+
+        init_logging(config.log);
 
         // TgBot::Bot bot(config.tgbot.token);
         // bot.getEvents().onCommand("start", [&bot](TgBot::Message::Ptr message) {
@@ -77,7 +78,9 @@ int main(int argc, const char *argv[]) {
         BondsLoader bonds_loader {config};
         PriceLoader price_loader {config};
 
-        Scanner scanner {config, bonds_loader, price_loader};
+        boost::asio::thread_pool thread_pool(4);
+
+        Scanner scanner {config, bonds_loader, price_loader, thread_pool};
 
         BOOST_LOG_TRIVIAL(info) << "Starting securities scanner";
 

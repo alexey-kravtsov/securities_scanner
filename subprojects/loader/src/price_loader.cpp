@@ -2,7 +2,8 @@
 #include "dto.h"
 
 PriceLoader::PriceLoader(const Config& a_config) 
-    : config { a_config }, client { http::HttpClient(config.broker.host, config.broker.auth, config.broker.price_rps) } {}
+    : config { a_config },
+     client { http::HttpClient{config.broker.host, config.broker.auth, config.broker.price_rps}} {}
 
 PriceMap PriceLoader::load(const std::vector<boost::uuids::uuid>& uid) {
     auto request = PriceRequest { .instrument_id = uid };
