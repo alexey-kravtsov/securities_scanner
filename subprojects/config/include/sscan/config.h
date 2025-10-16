@@ -15,7 +15,6 @@ class RankConfig {
         const std::string path_template;
         const std::string regex;
         const int max_pages;
-        const int min_days_to_maturity;
 };
 
 class BrokerConfig {
@@ -34,6 +33,11 @@ class BrokerConfig {
 class TgBotConfig {
     public:
         const std::string token;
+        const int64_t chat_id;
+        const std::string greeting_template;
+        const std::string bonds_stats_template;
+        const std::string price_template;
+        const std::string stats_template;
 };
 
 class Config {

@@ -119,15 +119,14 @@ std::optional<BondInfo> BondsLoader::load_bond(const std::string& bond_isin) {
         maturity_date = metadata.maturity_date;
     }
     auto maturity_interval = maturity_date - std::chrono::system_clock::now();
-    int days_to_maturity = std::chrono::duration_cast<std::chrono::days>(maturity_interval).count() + 3;
+    int dtm = std::chrono::duration_cast<std::chrono::days>(maturity_interval).count() + 3;
 
     if (!metadata.buy_available || 
         !metadata.sell_available ||
         metadata.floating_coupon ||
         metadata.amortization ||
         metadata.subordinated ||
-        !metadata.iis ||
-        days_to_maturity < config.rank.min_days_to_maturity) {
+        !metadata.iis) {
         return std::optional<BondInfo>{};
     }
 
@@ -139,7 +138,7 @@ std::optional<BondInfo> BondsLoader::load_bond(const std::string& bond_isin) {
             .accured_interest = interest.interest,
             .nominal = metadata.nominal,
             .cash_flow = cash_flow,
-            .days_to_maturity = days_to_maturity
+            .dtm = dtm
         }
     };
 }

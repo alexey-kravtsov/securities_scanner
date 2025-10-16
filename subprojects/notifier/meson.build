@@ -1,25 +1,22 @@
 project(
-  'scanner',
+  'notifier',
   'cpp',
   version : '0.1',
   default_options : ['warning_level=3', 'cpp_std=c++23']
 )
 
 project_headers = [
-  'include/sscan/scanner.h',
+  'include/sscan/notifier.h',
 ]
 
 project_source_files = [
-  'src/storage.cpp',
-  'src/scanner.cpp',
+  'src/notifier.cpp',
 ]
 
 project_dependencies = [
   dependency('config', fallback : ['config', 'config_dep']),
-  dependency('loader', fallback : ['loader', 'loader_dep']),
-  dependency('notifier', fallback : ['notifier', 'notifier_dep']),
+  dependency('tgbot-cpp', fallback : ['tgbot-cpp', 'TgBot_dep'], static: true),
 ]
-
 
 public_headers = include_directories('include')
 
@@ -40,7 +37,7 @@ project_target = static_library(
 project_dep = declare_dependency(
   include_directories: public_headers,
   link_with : project_target,
-  dependencies: project_dependencies
+  dependencies : project_dependencies
 )
 set_variable(meson.project_name() + '_dep', project_dep)
 

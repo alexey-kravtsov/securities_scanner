@@ -36,7 +36,8 @@ project_target = static_library(
 # Make this library usable as a Meson subproject.
 project_dep = declare_dependency(
   include_directories: public_headers,
-  link_with : project_target
+  link_with : project_target,
+  dependencies: project_dependencies
 )
 set_variable(meson.project_name() + '_dep', project_dep)
 

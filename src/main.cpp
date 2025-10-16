@@ -1,7 +1,7 @@
 #include <sscan/scanner.h>
+#include <sscan/notifier.h>
 #include <iostream>
 #include <boost/program_options.hpp>
-#include <tgbot/tgbot.h>
 
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
@@ -53,34 +53,15 @@ int main(int argc, const char *argv[]) {
 
         init_logging(config.log);
 
-        // TgBot::Bot bot(config.tgbot.token);
-        // bot.getEvents().onCommand("start", [&bot](TgBot::Message::Ptr message) {
-        //     bot.getApi().sendMessage(message->chat->id, "Hi!");
-        // });
-        // bot.getEvents().onAnyMessage([&bot](TgBot::Message::Ptr message) {
-        //     printf("User wrote %s\n", message->text.c_str());
-        //     if (StringTools::startsWith(message->text, "/start")) {
-        //         return;
-        //     }
-        //     bot.getApi().sendMessage(message->chat->id, "Your message is: " + message->text);
-        // });
-        // try {
-        //     printf("Bot username: %s\n", bot.getApi().getMe()->username.c_str());
-        //     TgBot::TgLongPoll longPoll(bot);
-        //     while (true) {
-        //         printf("Long poll started\n");
-        //         longPoll.start();
-        //     }
-        // } catch (TgBot::TgException& e) {
-        //     printf("error: %s\n", e.what());
-        // }
-
         BondsLoader bonds_loader {config};
         PriceLoader price_loader {config};
 
-        boost::asio::thread_pool thread_pool(4);
+        boost::asio::thread_pool thread_pool(16);
 
-        Scanner scanner {config, bonds_loader, price_loader, thread_pool};
+        Notifier notifier {config, thread_pool};
+        notifier.start();
+
+        Scanner scanner {config, bonds_loader, price_loader, notifier, thread_pool};
 
         BOOST_LOG_TRIVIAL(info) << "Starting securities scanner";
 

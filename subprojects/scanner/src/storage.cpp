@@ -1,9 +1,14 @@
 #include <sscan/scanner.h>
 
 Scanner::Storage::Storage(BondsLoader& bonds_loader, const std::chrono::time_zone* a_tz) : 
-    loader {bonds_loader}, tz {a_tz}, temporally_blacklist_m {}, temporally_blacklisted_bonds {} {}
+    loader {bonds_loader},
+     tz {a_tz},
+     min_ytm {21.5},
+     min_dtm {60},
+     temporally_blacklist_m {},
+     temporally_blacklisted_bonds {} {}
 
-void Scanner::Storage::load() {
+u_int64_t Scanner::Storage::load() {
     auto bonds_vec = loader.load();
     auto bonds_map = UidsMap<BondInfo>();
     bonds_map.reserve(bonds_vec.size());
@@ -11,22 +16,29 @@ void Scanner::Storage::load() {
         bonds_map.insert({bond.uid, bond});
     }
     
-    auto uids = UidSet();
-    uids.reserve(bonds_map.size());
-    for (auto& entry : bonds_map) {
-        uids.push_back(entry.first);
-    }
-
-    bonds = std::make_shared<Bonds>(Bonds{ .bonds_map = std::move(bonds_map), .bonds_uids = std::move(uids)});
+    bonds = std::make_shared<UidsMap<BondInfo>>(std::move(bonds_map));
+    return bonds->size();
 }
 
-std::shared_ptr<Scanner::Bonds> Scanner::Storage::get_bonds() {
+std::shared_ptr<Scanner::UidsMap<BondInfo>> Scanner::Storage::get_bonds() {
     return bonds;
 }
 
-double Scanner::Storage::get_ytm() {
-    return 22.0;
+double Scanner::Storage::get_min_ytm() {
+    return min_ytm;
 };
+
+void Scanner::Storage::set_min_ytm(double ytm) {
+    this->min_ytm = ytm;
+}
+
+int Scanner::Storage::get_min_dtm() {
+    return min_dtm;
+}
+
+void Scanner::Storage::set_min_dtm(int days) {
+    this->min_dtm = days;
+}
 
 void Scanner::Storage::blacklist_temporally(const boost::uuids::uuid& uid, const zoned_time& until) {
     std::unique_lock<std::shared_mutex> lock(temporally_blacklist_m);

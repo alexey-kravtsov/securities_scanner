@@ -16,8 +16,7 @@ Config Config::load(const std::string& file_name) {
         .host = rankNode["host"].as<std::string>(),
         .path_template = rankNode["path-template"].as<std::string>(),
         .regex = rankNode["regex"].as<std::string>(),
-        .max_pages = rankNode["max-pages"].as<int>(),
-        .min_days_to_maturity = rankNode["min-days-to-maturity"].as<int>()
+        .max_pages = rankNode["max-pages"].as<int>()
     };
 
     auto brokerNode = applicationNode["broker"];
@@ -35,7 +34,12 @@ Config Config::load(const std::string& file_name) {
 
     auto tgbotNode = applicationNode["tgbot"];
     TgBotConfig tgbot {
-        .token = tgbotNode["token"].as<std::string>()
+        .token = tgbotNode["token"].as<std::string>(),
+        .chat_id = tgbotNode["chat-id"].as<int64_t>(),
+        .greeting_template = tgbotNode["greeting-template"].as<std::string>(),
+        .bonds_stats_template = tgbotNode["bonds-stats-template"].as<std::string>(),
+        .price_template = tgbotNode["price-template"].as<std::string>(),
+        .stats_template = tgbotNode["stats-template"].as<std::string>()
     };
 
     return Config {log, rank, broker, tgbot};

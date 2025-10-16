@@ -15,10 +15,9 @@ project_dependencies = [
   dependency('config', fallback : ['config', 'config_dep']),
   dependency('loader', fallback : ['loader', 'loader_dep']),
   dependency('scanner', fallback : ['scanner', 'scanner_dep']),
+  dependency('notifier', fallback : ['notifier', 'notifier_dep']),
 
-  dependency('tgbot-cpp', fallback: ['tgbot-cpp', 'TgBot_dep'], static: true),
-  dependency('jsoncpp_static', static: true),
-  dependency('boost', modules: ['log', 'log_setup', 'thread', 'filesystem', 'program_options'], static: true),
+  dependency('boost', modules: ['log', 'log_setup', 'thread', 'filesystem', 'program_options'], static: true)
 ]
 
 executable(

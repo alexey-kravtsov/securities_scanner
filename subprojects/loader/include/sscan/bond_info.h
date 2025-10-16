@@ -12,7 +12,7 @@ class BondInfo {
         const long accured_interest;
         const long nominal;
         const long cash_flow;
-        const int days_to_maturity;
+        const int dtm;
 };
 
 #endif // SECURITIES_SCANNER_BOND_INFO_H
