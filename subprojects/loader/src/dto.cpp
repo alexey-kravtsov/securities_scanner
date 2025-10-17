@@ -80,6 +80,15 @@ std::string to_json(const PriceRequest& request) {
     return write_json_value(root);
 }
 
+template<>
+std::string to_json(const BookRequest& request) {
+    Json::Value root;
+    root["instrumentId"] = boost::uuids::to_string(request.uid);
+    root["depth"] = std::to_string(request.depth);
+
+    return write_json_value(root);
+}
+
 template<> 
 BondMetadataResponse parse<BondMetadataResponse>(const std::string& json_str) {
     Json::Value json;
@@ -131,7 +140,7 @@ CouponsResponse parse<CouponsResponse>(const std::string& json_str) {
     auto coupons = std::vector<Coupon> {};
     auto events = json["events"];
     for (auto& event : events) {
-        auto coupon_date = parse_iso_8601(event["couponDate"].asString());
+        auto coupon_date = parse_iso_8601(event["fixDate"].asString());
 
         auto value = event["payOneBond"];
         auto units = std::stoi(value["units"].asString());
@@ -167,4 +176,30 @@ PriceResponse parse<PriceResponse>(const std::string& json_str) {
     }
 
     return PriceResponse { .last_prices = std::move(price_entries) };
+}
+
+template<>
+BookResponse parse<BookResponse>(const std::string& json_str) {
+    Json::Value json;
+    read_json_value(json_str, json);
+
+    auto bids = json["bids"];
+    long bid = 0;
+    if (bids.size() != 0) {
+        auto price = bids[0]["price"];
+        auto units = std::stoi(price["units"].asString());
+        auto nano = price["nano"].asInt64();
+        bid = calc_price(units, nano);
+    }
+
+    auto asks = json["asks"];
+    long ask = 0;
+    if (bids.size() != 0) {
+        auto price = asks[0]["price"];
+        auto units = std::stoi(price["units"].asString());
+        auto nano = price["nano"].asInt64();
+        ask = calc_price(units, nano);
+    }
+
+    return BookResponse { .bid_price = bid, .ask_price = ask };
 }

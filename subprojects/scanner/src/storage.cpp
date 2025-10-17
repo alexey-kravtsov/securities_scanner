@@ -40,34 +40,32 @@ void Scanner::Storage::set_min_dtm(int days) {
     this->min_dtm = days;
 }
 
-void Scanner::Storage::blacklist_temporally(const boost::uuids::uuid& uid, const zoned_time& until) {
-    std::unique_lock<std::shared_mutex> lock(temporally_blacklist_m);
-    temporally_blacklisted_bonds[uid] = until;
+void Scanner::Storage::blacklist_temporally(const boost::uuids::uuid& uid, const BlacklistParams& params) {
+    std::unique_lock<std::shared_mutex> wlock(temporally_blacklist_m);
+    temporally_blacklisted_bonds[uid] = BlacklistParams { params };
 }
 
-bool Scanner::Storage::is_blacklisted(const boost::uuids::uuid& uid) {
+std::optional<Scanner::BlacklistParams> Scanner::Storage::get_blacklisted(const boost::uuids::uuid& uid) {
     auto now = std::chrono::zoned_time(tz, std::chrono::system_clock::now());
     {
         std::shared_lock<std::shared_mutex> rlock(temporally_blacklist_m);
-        auto until_it = temporally_blacklisted_bonds.find(uid);
-        if (until_it == temporally_blacklisted_bonds.end()) {
-            return false;
-        }
-
-        if (until_it->second.get_local_time() > now.get_local_time()) {
-            return true;
+        auto params_it = temporally_blacklisted_bonds.find(uid);
+        if (params_it == temporally_blacklisted_bonds.end()) {
+            return {};
         }
     }
 
     std::unique_lock<std::shared_mutex> wlock(temporally_blacklist_m);
-    auto until_it = temporally_blacklisted_bonds.find(uid);
-    if (until_it == temporally_blacklisted_bonds.end()) {
-        return false;
+    auto params_it = temporally_blacklisted_bonds.find(uid);
+    if (params_it == temporally_blacklisted_bonds.end()) {
+        return {};
     }
-    if (until_it->second.get_local_time() > now.get_local_time()) {
-        return true;
+
+    zoned_time until = params_it->second.until;
+    if (until.get_local_time() > now.get_local_time()) {
+        return std::optional { params_it->second };
     }
 
     temporally_blacklisted_bonds.erase(uid);
-    return false;
+    return {};
 }

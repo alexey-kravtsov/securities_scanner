@@ -19,6 +19,7 @@ class PriceLoader {
         PriceLoader& operator=(const PriceLoader& other) = delete;
 
         PriceMap load(const std::vector<boost::uuids::uuid>& uid);
+        long load_book_price(const boost::uuids::uuid& uid);
     private:
         const Config& config;
         http::HttpClient client;

@@ -103,6 +103,9 @@ std::optional<BondInfo> BondsLoader::load_bond(const std::string& bond_isin) {
 
     long cash_flow = metadata.nominal;
     for (auto& coupon : coupons.coupons) {
+        if (coupon.date < coupon_start_date) {
+            continue;
+        }
         cash_flow += coupon.interest;
     }
 

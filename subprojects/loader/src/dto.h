@@ -67,6 +67,16 @@ struct CouponsResponse {
     std::vector<Coupon> coupons;
 };
 
+struct BookRequest {
+    boost::uuids::uuid uid;
+    int depth;
+};
+
+struct BookResponse {
+    long bid_price;
+    long ask_price;
+};
+
 template <typename T>
 std::string to_json(const T& value);
 

@@ -25,6 +25,7 @@ class BrokerConfig {
         const std::string interest_path;
         const std::string coupons_path;
         const std::string price_path;
+        const std::string book_price_path;
         const int instruments_rps;
         const int price_rps;
         const std::string timezone;
@@ -38,6 +39,7 @@ class TgBotConfig {
         const std::string bonds_stats_template;
         const std::string price_template;
         const std::string stats_template;
+        const std::string farewell_template;
 };
 
 class Config {

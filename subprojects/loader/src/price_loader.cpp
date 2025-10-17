@@ -18,3 +18,10 @@ PriceMap PriceLoader::load(const std::vector<boost::uuids::uuid>& uid) {
 
     return result;
 }
+
+long PriceLoader::load_book_price(const boost::uuids::uuid& uid) {
+    auto request = BookRequest { .uid = uid, .depth = 1 };
+    auto response = client.post(config.broker.book_price_path, to_json(request));
+    auto book_price = parse<BookResponse>(response);
+    return book_price.ask_price;
+}

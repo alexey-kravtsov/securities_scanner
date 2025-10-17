@@ -44,6 +44,21 @@ void Notifier::start() {
     boost::asio::post(thread_pool, [&]() { long_poll();});
 }
 
+const std::string get_localized_state(const WorkingState& state) {
+    switch (state) {
+        case WorkingState::WORKING:
+            return "работаю";
+        case WorkingState::IDLE:
+            return "не работаю";
+        case WorkingState::OVERTIME:
+            return "работаю сверхурочно";
+        case WorkingState::HOLIDAY:
+            return "внеплановый выходной";
+    }
+
+    throw std::invalid_argument {"unknown state"};
+}
+
 void Notifier::handle_message(TgBot::Message::Ptr message) {
     try {
         if (message->text.starts_with("/stats")) {
@@ -54,7 +69,8 @@ void Notifier::handle_message(TgBot::Message::Ptr message) {
                 stats.total_prices_loaded,
                 format_date(stats.last_prices_loaded),
                 format_double(stats.min_ytm),
-                stats.min_dtm
+                stats.min_dtm,
+                get_localized_state(stats.working_state)
             ));
             send_message(message);
         }
@@ -67,8 +83,27 @@ void Notifier::send_greeting() {
     send_message(config.tgbot.greeting_template);
 }
 
+void Notifier::send_farewell() {
+    send_message(config.tgbot.farewell_template);
+}
+
+const std::string get_localized_bond(const int count) {
+    int digit = count % 10;
+    switch (digit) {
+        case 1:
+            return "облигация";
+        case 2:
+        case 3:
+        case 4:
+            return "облигации";
+        default:
+            return "облигаций";
+    };
+}
+
 void Notifier::send_bonds_update_stats(const BondsUpdateStats& stats) {
-    auto message = std::vformat(config.tgbot.bonds_stats_template, std::make_format_args(stats.total_bonds_loaded));
+    auto message = std::vformat(config.tgbot.bonds_stats_template, std::make_format_args(
+        stats.total_bonds_loaded, get_localized_bond(stats.total_bonds_loaded)));
     send_message(message);
 }
 

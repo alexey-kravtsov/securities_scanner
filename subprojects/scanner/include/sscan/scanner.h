@@ -31,6 +31,11 @@ class Scanner {
         using UidSet = std::vector<boost::uuids::uuid>;
         using zoned_time = std::chrono::zoned_time<std::chrono::_V2::system_clock::duration, const std::chrono::time_zone*>;
 
+        struct BlacklistParams {
+            zoned_time until;
+            double max_ytm;
+        };
+
         class Storage {
             public:
                 Storage(BondsLoader& loader, const std::chrono::time_zone* a_tz);
@@ -50,8 +55,8 @@ class Scanner {
                 int get_min_dtm();
                 void set_min_dtm(int days);
 
-                void blacklist_temporally(const boost::uuids::uuid& uid, const zoned_time& until);
-                bool is_blacklisted(const boost::uuids::uuid& uid);
+                void blacklist_temporally(const boost::uuids::uuid& uid, const BlacklistParams& params);
+                std::optional<BlacklistParams> get_blacklisted(const boost::uuids::uuid& uid);
             private:
                 BondsLoader& loader;
                 const std::chrono::time_zone* tz;
@@ -60,7 +65,7 @@ class Scanner {
                 double min_ytm;
                 int min_dtm;
                 std::shared_mutex temporally_blacklist_m;
-                UidsMap<zoned_time> temporally_blacklisted_bonds;
+                UidsMap<BlacklistParams> temporally_blacklisted_bonds;
         };
 
         const Config& config;
@@ -70,14 +75,14 @@ class Scanner {
         Notifier& notifier;
         boost::asio::thread_pool& thread_pool;
         
+        WorkingState working_state;
         u_int64_t total_bonds_loaded;
-        zoned_time bonds_update_timestamp;
+        zoned_time last_bonds_loaded;
         u_int64_t total_prices_loaded;
-        zoned_time price_update_timestamp;
+        zoned_time last_prices_loaded;
         std::counting_semaphore<1> bonds_semaphore;
         std::counting_semaphore<1> price_semaphore;
 
-        bool is_working_hours();
         bool is_bonds_outdated();
         PriceUpdateStats update_prices();
         void temp_blacklist_bonds(const PriceUpdateStats& stats);

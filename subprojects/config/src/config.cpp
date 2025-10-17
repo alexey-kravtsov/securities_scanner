@@ -27,6 +27,7 @@ Config Config::load(const std::string& file_name) {
         .interest_path = brokerNode["interest-path"].as<std::string>(),
         .coupons_path = brokerNode["coupons-path"].as<std::string>(),
         .price_path = brokerNode["price-path"].as<std::string>(),
+        .book_price_path = brokerNode["book-price-path"].as<std::string>(),
         .instruments_rps = brokerNode["instruments-rps"].as<int>(),
         .price_rps = brokerNode["price-rps"].as<int>(),
         .timezone = brokerNode["timezone"].as<std::string>(),
@@ -39,7 +40,8 @@ Config Config::load(const std::string& file_name) {
         .greeting_template = tgbotNode["greeting-template"].as<std::string>(),
         .bonds_stats_template = tgbotNode["bonds-stats-template"].as<std::string>(),
         .price_template = tgbotNode["price-template"].as<std::string>(),
-        .stats_template = tgbotNode["stats-template"].as<std::string>()
+        .stats_template = tgbotNode["stats-template"].as<std::string>(),
+        .farewell_template = tgbotNode["farewell-template"].as<std::string>()
     };
 
     return Config {log, rank, broker, tgbot};

@@ -28,12 +28,16 @@ struct PriceUpdateStats {
     std::vector<BondYield> new_prices;
 };
 
+enum class WorkingState { WORKING, IDLE, OVERTIME, HOLIDAY };
+
 struct ScannerStats {
     u_int64_t total_bonds_loaded;
     zoned_time last_bonds_loaded;
 
     u_int64_t total_prices_loaded;
     zoned_time last_prices_loaded;
+
+    WorkingState working_state;
 
     double min_ytm;
     int min_dtm;
@@ -49,6 +53,7 @@ class Notifier {
         void start();
 
         void send_greeting();
+        void send_farewell();
         void send_bonds_update_stats(const BondsUpdateStats& stats);
         void send_price_update_stats(const PriceUpdateStats& stats);
         void on_stats_requested(const std::function<ScannerStats ()>& func);
