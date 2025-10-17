@@ -95,7 +95,7 @@ void Scanner::process() {
 
     if (working_state == WorkingState::IDLE) {
         try {
-            // notifier.send_greeting();
+            notifier.send_greeting();
         } catch (const std::exception& ex) {
             BOOST_LOG_TRIVIAL(error) << ex.what();
         }
