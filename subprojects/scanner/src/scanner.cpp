@@ -193,6 +193,10 @@ PriceUpdateStats Scanner::update_prices() {
 
             price = book_price / 10000.0 * bond.nominal;
             ytm = (bond.cash_flow / (price + bond.accured_interest) - 1) * 365.0 / bond.dtm * 100;
+            
+            if (ytm < min_ytm) {
+                continue;
+            }
 
             if (blacklisted_params.has_value() && ytm - blacklisted_params.value().max_ytm < 1) {
                 continue;
