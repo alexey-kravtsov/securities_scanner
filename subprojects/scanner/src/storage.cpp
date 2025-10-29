@@ -1,4 +1,4 @@
-#include <sscan/scanner.h>
+#include "storage.h"
 
 Scanner::Storage::Storage(BondsLoader& bonds_loader, const std::chrono::time_zone* a_tz) : 
     loader {bonds_loader},
@@ -20,7 +20,7 @@ u_int64_t Scanner::Storage::load() {
     return bonds->size();
 }
 
-std::shared_ptr<Scanner::UidsMap<BondInfo>> Scanner::Storage::get_bonds() {
+std::shared_ptr<UidsMap<BondInfo>> Scanner::Storage::get_bonds() {
     return bonds;
 }
 
@@ -43,6 +43,10 @@ void Scanner::Storage::set_min_dtm(int days) {
 void Scanner::Storage::blacklist_temporally(const boost::uuids::uuid& uid, const BlacklistParams& params) {
     std::unique_lock<std::shared_mutex> wlock(temporally_blacklist_m);
     temporally_blacklisted_bonds[uid] = BlacklistParams { params };
+}
+
+void Scanner::Storage::reset_blacklist() {
+    temporally_blacklisted_bonds = {};
 }
 
 std::optional<Scanner::BlacklistParams> Scanner::Storage::get_blacklisted(const boost::uuids::uuid& uid) {

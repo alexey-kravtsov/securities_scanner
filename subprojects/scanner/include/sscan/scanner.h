@@ -19,6 +19,8 @@ class Scanner {
             Notifier& notifier,
             boost::asio::thread_pool& thread_pool);
 
+        ~Scanner();
+
         Scanner(const Scanner& other) = delete;
         Scanner& operator=(const Scanner& other) = delete;
 
@@ -26,62 +28,21 @@ class Scanner {
         void process();
     private:
 
-        template<typename V>
-        using UidsMap = std::unordered_map<boost::uuids::uuid, V, boost::hash<boost::uuids::uuid>>;
-        using UidSet = std::vector<boost::uuids::uuid>;
+        struct BlacklistParams;
+        class Storage;
+
         using zoned_time = std::chrono::zoned_time<std::chrono::_V2::system_clock::duration, const std::chrono::time_zone*>;
-
-        struct BlacklistParams {
-            zoned_time until;
-            double max_ytm;
-        };
-
-        class Storage {
-            public:
-                Storage(BondsLoader& loader, const std::chrono::time_zone* a_tz);
-
-                Storage(const Storage& other) = delete;
-                Storage& operator=(const Storage& other) = delete;
-
-                Storage(Storage&& other) = default;
-                Storage& operator=(Storage&& other) = default;
-
-                u_int64_t load();
-                std::shared_ptr<UidsMap<BondInfo>> get_bonds();
-
-                double get_min_ytm();
-                void set_min_ytm(double ytm);
-
-                int get_min_dtm();
-                void set_min_dtm(int days);
-
-                void blacklist_temporally(const boost::uuids::uuid& uid, const BlacklistParams& params);
-                std::optional<BlacklistParams> get_blacklisted(const boost::uuids::uuid& uid);
-            private:
-                BondsLoader& loader;
-                const std::chrono::time_zone* tz;
-                std::shared_ptr<UidsMap<BondInfo>> bonds;
-
-                double min_ytm;
-                int min_dtm;
-                std::shared_mutex temporally_blacklist_m;
-                UidsMap<BlacklistParams> temporally_blacklisted_bonds;
-        };
 
         const Config& config;
         const std::chrono::time_zone* tz;
-        Storage storage;
+        std::unique_ptr<Storage> storage;
         PriceLoader& price_loader;
         Notifier& notifier;
         boost::asio::thread_pool& thread_pool;
         
-        WorkingState working_state;
-        u_int64_t total_bonds_loaded;
-        zoned_time last_bonds_loaded;
-        u_int64_t total_prices_loaded;
-        zoned_time last_prices_loaded;
-        std::counting_semaphore<1> bonds_semaphore;
-        std::counting_semaphore<1> price_semaphore;
+        ScannerStats stats;
+        std::counting_semaphore<1> bonds_sem;
+        std::counting_semaphore<1> price_sem;
 
         bool is_bonds_outdated();
         PriceUpdateStats update_prices();

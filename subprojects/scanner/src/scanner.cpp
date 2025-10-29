@@ -2,6 +2,7 @@
 #include <iostream>
 #include <boost/asio/post.hpp>
 #include <boost/log/trivial.hpp>
+#include "storage.h"
 
 constexpr int BONDS_UPDATE_INTERVAL_HRS = 24;
 
@@ -25,6 +26,8 @@ bool is_working_hours(const zoned_time& now, const std::chrono::time_zone* tz) {
     return true;
 }
 
+Scanner::~Scanner() = default;
+
 Scanner::Scanner(
     const Config& a_config, 
     BondsLoader& a_bonds_loader, 
@@ -33,29 +36,62 @@ Scanner::Scanner(
     boost::asio::thread_pool& a_pool) 
     : config { a_config },
     tz { std::chrono::locate_zone(a_config.broker.timezone) },
-    storage { a_bonds_loader, tz },
+    storage { new Storage(a_bonds_loader, tz) },
     price_loader { a_price_loader },
     notifier { a_notifier },
     thread_pool { a_pool },
-    working_state {WorkingState::IDLE},
-    total_bonds_loaded {0},
-    last_bonds_loaded {},
-    total_prices_loaded {0},
-    last_prices_loaded {},
-    bonds_semaphore {1},
-    price_semaphore {1} {}
+    stats { },
+    bonds_sem {1},
+    price_sem {1} {}
 
 void Scanner::start() {
+
+    stats.working_state = WorkingState::IDLE;
+
     notifier.on_stats_requested([&]() { 
-        return ScannerStats {
-            .total_bonds_loaded = total_bonds_loaded,
-            .last_bonds_loaded = last_bonds_loaded,
-            .total_prices_loaded = total_prices_loaded,
-            .last_prices_loaded = last_prices_loaded,
-            .working_state = working_state,
-            .min_ytm = storage.get_min_ytm(),
-            .min_dtm = storage.get_min_dtm()
-        }; 
+        return stats;
+    });
+
+    notifier.on_target_ytm_change([&](double ytm) {
+        storage->set_min_ytm(ytm);
+        storage->reset_blacklist();
+        stats.min_ytm = ytm;
+        notifier.send_value_set();
+    });
+
+    notifier.on_target_dtm_change([&](int dtm) {
+        storage->set_min_dtm(dtm);
+        storage->reset_blacklist();
+        stats.min_dtm = dtm;
+        notifier.send_value_set();
+    });
+
+    notifier.on_working_state_change([&](WorkingState state) {
+        auto now = std::chrono::zoned_time(tz, std::chrono::system_clock::now());
+        if (!is_working_hours(now, tz)) {
+            notifier.send_working_time_error();
+            return;
+        }
+
+        auto current_state = stats.working_state;
+
+        if (state == WorkingState::OVERTIME) {
+            if (current_state == WorkingState::WORKING || current_state == WorkingState::OVERTIME) {
+                notifier.send_overtime_fail();
+            } else {
+                stats.working_state = state;
+                notifier.send_overtime_success();
+            }
+        }
+
+        if (state == WorkingState::HOLIDAY) {
+            if (current_state == WorkingState::HOLIDAY) {
+                notifier.send_holiday_fail();
+            } else {
+                stats.working_state = state;
+                notifier.send_holiday_success();
+            }
+        }
     });
 
     while (true) {
@@ -69,59 +105,62 @@ void Scanner::start() {
 }
 
 void Scanner::process() {
+    stats.min_ytm = storage->get_min_ytm();
+    stats.min_dtm = storage->get_min_dtm();
+
     auto now = std::chrono::zoned_time(tz, std::chrono::system_clock::now());
     auto working_hours = is_working_hours(now, tz);
 
     if (!working_hours) {
-        if (working_state == WorkingState::WORKING || working_state == WorkingState::OVERTIME) {
+        if (stats.working_state == WorkingState::WORKING || stats.working_state == WorkingState::OVERTIME) {
             try {
                 notifier.send_farewell();
             } catch (const std::exception& ex) {
                 BOOST_LOG_TRIVIAL(error) << ex.what();
             }
         }
-        working_state = WorkingState::IDLE;
+        stats.working_state = WorkingState::IDLE;
         return;
     }
 
-    if (working_state == WorkingState::HOLIDAY) {
+    if (stats.working_state == WorkingState::HOLIDAY) {
         return;
     }
 
     auto weekend = is_weekend(now);
-    if (working_state != WorkingState::OVERTIME && weekend) {
+    if (stats.working_state != WorkingState::OVERTIME && weekend) {
         return;
     }
 
-    if (working_state == WorkingState::IDLE) {
+    if (stats.working_state == WorkingState::IDLE) {
         try {
             notifier.send_greeting();
         } catch (const std::exception& ex) {
             BOOST_LOG_TRIVIAL(error) << ex.what();
         }
-        working_state = WorkingState::WORKING;
+        stats.working_state = WorkingState::WORKING;
     }
 
     bool bonds_outdated = is_bonds_outdated() ;
-    if (bonds_outdated && bonds_semaphore.try_acquire()) {
+    if (bonds_outdated && bonds_sem.try_acquire()) {
         boost::asio::post(thread_pool, [&]() {
             try {
-                auto bonds_loaded = storage.load();
+                auto bonds_loaded = storage->load();
                 notifier.send_bonds_update_stats(BondsUpdateStats { bonds_loaded });
 
                 std::chrono::zoned_time zt(tz, std::chrono::system_clock::now());
                 auto local_day = std::chrono::floor<std::chrono::days>(zt.get_local_time());
-                last_bonds_loaded = std::chrono::zoned_time(tz, local_day + std::chrono::hours(8));
-                total_bonds_loaded = bonds_loaded;
+                stats.last_bonds_loaded = std::chrono::zoned_time(tz, local_day + std::chrono::hours(8));
+                stats.total_bonds_loaded = bonds_loaded;
             } catch (const std::exception& ex) {
                 BOOST_LOG_TRIVIAL(error) << "Error updating bonds: " << ex.what();
             }
             
-            bonds_semaphore.release();
+            bonds_sem.release();
         });
     }
 
-    if (!bonds_outdated && price_semaphore.try_acquire()) {
+    if (!bonds_outdated && price_sem.try_acquire()) {
         boost::asio::post(thread_pool, [&]() {
             try {
                 auto prices = update_prices();
@@ -129,13 +168,13 @@ void Scanner::process() {
                     notifier.send_price_update_stats(prices);
                 }
                 temp_blacklist_bonds(prices);
-                last_prices_loaded = std::chrono::zoned_time(tz, std::chrono::system_clock::now());
-                total_prices_loaded = prices.total_prices;
+                stats.last_prices_loaded = std::chrono::zoned_time(tz, std::chrono::system_clock::now());
+                stats.total_prices_loaded = prices.total_prices;
             } catch (const std::exception& ex) {
                 BOOST_LOG_TRIVIAL(error) << "Error updating prices: " << ex.what();
             }
 
-            price_semaphore.release();
+            price_sem.release();
         });
     }
 }
@@ -143,7 +182,7 @@ void Scanner::process() {
 bool Scanner::is_bonds_outdated() {
     auto now = std::chrono::zoned_time(tz, std::chrono::system_clock::now());
     return std::chrono::duration_cast<std::chrono::hours>(
-        now.get_sys_time() - last_bonds_loaded.get_sys_time()).count() >= BONDS_UPDATE_INTERVAL_HRS;
+        now.get_sys_time() - stats.last_bonds_loaded.get_sys_time()).count() >= BONDS_UPDATE_INTERVAL_HRS;
 }
 
 PriceUpdateStats Scanner::update_prices() {
@@ -151,9 +190,9 @@ PriceUpdateStats Scanner::update_prices() {
     auto new_prices = std::vector<BondYield>();
     BOOST_LOG_TRIVIAL(debug) << "Updating prices";
     try {
-        auto bonds = storage.get_bonds();
-        auto min_ytm = storage.get_min_ytm();
-        auto min_dtm = storage.get_min_dtm();
+        auto bonds = storage->get_bonds();
+        auto min_ytm = stats.min_ytm;
+        auto min_dtm = stats.min_dtm;
 
         auto uids = UidSet();
         uids.reserve(bonds->size());
@@ -181,7 +220,7 @@ PriceUpdateStats Scanner::update_prices() {
                 continue;
             }
 
-            auto blacklisted_params = storage.get_blacklisted(bond.uid);
+            auto blacklisted_params = storage->get_blacklisted(bond.uid);
             if (blacklisted_params.has_value() && ytm - blacklisted_params.value().max_ytm < 1) {
                 continue;
             }
@@ -236,6 +275,6 @@ void Scanner::temp_blacklist_bonds(const PriceUpdateStats& stats) {
     auto until = std::chrono::zoned_time(tz, next_day + std::chrono::hours(8));
 
     for (auto& bond : stats.new_prices) {
-        storage.blacklist_temporally(bond.uid, BlacklistParams { .until = until, .max_ytm = bond.ytm });
+        storage->blacklist_temporally(bond.uid, BlacklistParams { .until = until, .max_ytm = bond.ytm });
     }
 }

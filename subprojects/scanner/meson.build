@@ -10,6 +10,7 @@ project_headers = [
 ]
 
 project_source_files = [
+  'src/storage.h',
   'src/storage.cpp',
   'src/scanner.cpp',
 ]

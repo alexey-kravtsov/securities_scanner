@@ -41,7 +41,14 @@ Config Config::load(const std::string& file_name) {
         .bonds_stats_template = tgbotNode["bonds-stats-template"].as<std::string>(),
         .price_template = tgbotNode["price-template"].as<std::string>(),
         .stats_template = tgbotNode["stats-template"].as<std::string>(),
-        .farewell_template = tgbotNode["farewell-template"].as<std::string>()
+        .farewell_template = tgbotNode["farewell-template"].as<std::string>(),
+        .value_set_template = tgbotNode["value-set-template"].as<std::string>(),
+        .parse_error_template = tgbotNode["parse-error-template"].as<std::string>(),
+        .overtime_success_template = tgbotNode["overtime-success-template"].as<std::string>(),
+        .overtime_fail_template = tgbotNode["overtime-fail-template"].as<std::string>(),
+        .holiday_success_template = tgbotNode["holiday-success-template"].as<std::string>(),
+        .holiday_fail_template = tgbotNode["holiday-fail-template"].as<std::string>(),
+        .working_time_error_template = tgbotNode["working-time-error-template"].as<std::string>(),
     };
 
     return Config {log, rank, broker, tgbot};

@@ -40,6 +40,13 @@ class TgBotConfig {
         const std::string price_template;
         const std::string stats_template;
         const std::string farewell_template;
+        const std::string value_set_template;
+        const std::string parse_error_template;
+        const std::string overtime_success_template;
+        const std::string overtime_fail_template;
+        const std::string holiday_success_template;
+        const std::string holiday_fail_template;
+        const std::string working_time_error_template;
 };
 
 class Config {
