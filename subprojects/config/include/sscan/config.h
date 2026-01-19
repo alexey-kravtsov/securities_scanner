@@ -41,6 +41,7 @@ class TgBotConfig {
         const std::string stats_template;
         const std::string farewell_template;
         const std::string value_set_template;
+        const std::string reload_template;
         const std::string parse_error_template;
         const std::string overtime_success_template;
         const std::string overtime_fail_template;

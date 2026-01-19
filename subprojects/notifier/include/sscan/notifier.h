@@ -55,6 +55,7 @@ class Notifier {
         void send_greeting();
         void send_farewell();
         void send_value_set();
+        void send_reloaded();
         void send_bonds_update_stats(const BondsUpdateStats& stats);
         void send_price_update_stats(const PriceUpdateStats& stats);
         void send_overtime_success();
@@ -66,6 +67,7 @@ class Notifier {
         void on_stats_requested(const std::function<ScannerStats ()>& func);
         void on_target_ytm_change(const std::function<void (double)>& func);
         void on_target_dtm_change(const std::function<void (int)>& func);
+        void on_reload(const std::function<void ()>& func);
         void on_working_state_change(const std::function<void (WorkingState)>& func);
     private:
         const Config& config;
@@ -75,12 +77,15 @@ class Notifier {
         std::function<ScannerStats ()> on_stats_requested_func;
         std::function<void (double)> on_target_ytm_change_func;
         std::function<void (int)> on_target_dtm_change_func;
+        std::function<void ()> on_reload_func;
         std::function<void (WorkingState)> on_working_state_change_func;
+
 
         void handle_message(TgBot::Message::Ptr message);
         void handle_stats_message();
         void handle_ytm_message(TgBot::Message::Ptr message);
         void handle_dtm_message(TgBot::Message::Ptr message);
+        void handle_reload_message();
         void long_poll();
         void send_message(const std::string& message);
 };

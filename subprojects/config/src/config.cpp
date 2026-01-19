@@ -43,6 +43,7 @@ Config Config::load(const std::string& file_name) {
         .stats_template = tgbotNode["stats-template"].as<std::string>(),
         .farewell_template = tgbotNode["farewell-template"].as<std::string>(),
         .value_set_template = tgbotNode["value-set-template"].as<std::string>(),
+        .reload_template = tgbotNode["reload-template"].as<std::string>(),
         .parse_error_template = tgbotNode["parse-error-template"].as<std::string>(),
         .overtime_success_template = tgbotNode["overtime-success-template"].as<std::string>(),
         .overtime_fail_template = tgbotNode["overtime-fail-template"].as<std::string>(),

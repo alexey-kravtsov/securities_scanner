@@ -86,6 +86,9 @@ void Notifier::handle_message(TgBot::Message::Ptr message) {
         if (message->text.starts_with("/dtm")) {
             handle_dtm_message(message);
         }
+        if (message->text.starts_with("/reload")) {
+            handle_reload_message();
+        }
         if (message->text.starts_with("/overtime")) {
             on_working_state_change_func(WorkingState::OVERTIME);
         }
@@ -141,6 +144,14 @@ void Notifier::handle_dtm_message(TgBot::Message::Ptr message) {
     }
 }
 
+void Notifier::handle_reload_message() {
+    try {
+        on_reload_func();
+    } catch (const std::exception& e) {
+        send_message(config.tgbot.parse_error_template);
+    }
+}
+
 void Notifier::send_greeting() {
     send_message(config.tgbot.greeting_template);
 }
@@ -151,6 +162,10 @@ void Notifier::send_farewell() {
 
 void Notifier::send_value_set() {
     send_message(config.tgbot.value_set_template);
+}
+
+void Notifier::send_reloaded() {
+    send_message(config.tgbot.reload_template);
 }
 
 void Notifier::send_overtime_success() {
@@ -208,6 +223,10 @@ void Notifier::on_target_dtm_change(const std::function<void (int)>& func) {
 
 void Notifier::on_working_state_change(const std::function<void (WorkingState)>& func) {
     on_working_state_change_func = func;
+}
+
+void Notifier::on_reload(const std::function<void ()>& func) {
+    on_reload_func = func;
 }
 
 void Notifier::long_poll() {

@@ -66,6 +66,11 @@ void Scanner::start() {
         notifier.send_value_set();
     });
 
+    notifier.on_reload([&]() {
+        storage->reset_blacklist();
+        notifier.send_reloaded();
+    });
+
     notifier.on_working_state_change([&](WorkingState state) {
         auto now = std::chrono::zoned_time(tz, std::chrono::system_clock::now());
         if (!is_working_hours(now, tz)) {
