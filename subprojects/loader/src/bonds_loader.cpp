@@ -76,6 +76,7 @@ std::unordered_set<std::string> BondsLoader::find(const int page) {
 
 std::optional<BondInfo> BondsLoader::load_bond(const std::string& bond_isin) {
     std::string metadata_response;
+    time_point now = std::chrono::system_clock::now();
 
     try {
         BondMetadataRequest request { .id = bond_isin };
@@ -85,12 +86,9 @@ std::optional<BondInfo> BondsLoader::load_bond(const std::string& bond_isin) {
     }
 
     BondMetadataResponse metadata = parse<BondMetadataResponse>(metadata_response);
-
-    if (bond_isin != metadata.isin) {
+    if (bond_isin != metadata.isin || metadata.maturity_date <= now) {
         return std::optional<BondInfo>{};
     }
-
-    time_point now = std::chrono::system_clock::now();
 
     AccuredInterestRequest interest_request { .from = now, .to = now, .uid = metadata.uid };
     auto interest_response = t_client.post(config.broker.interest_path, to_json(interest_request));

@@ -90,7 +90,6 @@ std::string HttpClient::request(beast::http::verb method, const std::string& pat
 void HttpClient::connect() {
     service = std::make_unique<asio::io_service>();
     ssl::context ctx(asio::ssl::context::tls_client);
-    ctx.set_verify_mode(asio::ssl::verify_none);
 
     ssl_socket_stream = std::make_unique<socket_stream_t>(socket_stream_t { *service, ctx });
     SSL_set_tlsext_host_name(ssl_socket_stream->native_handle(), host.c_str());
