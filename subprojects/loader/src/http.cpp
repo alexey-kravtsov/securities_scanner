@@ -47,6 +47,10 @@ std::string HttpClient::request(beast::http::verb method, const std::string& pat
     beast::http::request<beast::http::string_body> req{ method, path, 11 };
     req.set(beast::http::field::host, host);
     req.set(boost::beast::http::field::content_type, "application/json");
+    req.set(boost::beast::http::field::user_agent, "Chrome/146.0.0.0");
+    req.set(boost::beast::http::field::accept, "*/*");
+    req.set(boost::beast::http::field::accept_encoding, "identity");
+
     if (auth.length() > 0) {
         req.set(beast::http::field::authorization, auth);
     }
