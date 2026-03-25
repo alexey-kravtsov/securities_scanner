@@ -1,5 +1,7 @@
 #!/bin/bash
 
+rm -rf builddir
+
 BUILD_PARAMS="--reconfigure -Ddefault_library=static -Dcpp_std=c++23"
 
 if [ "$1" == "release" ]; then
