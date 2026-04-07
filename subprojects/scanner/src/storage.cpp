@@ -3,7 +3,7 @@
 Scanner::Storage::Storage(BondsLoader& bonds_loader, const std::chrono::time_zone* a_tz) : 
     loader {bonds_loader},
      tz {a_tz},
-     min_ytm {21.5},
+     min_ytm {20.0},
      min_dtm {60},
      temporally_blacklist_m {},
      temporally_blacklisted_bonds {} {}

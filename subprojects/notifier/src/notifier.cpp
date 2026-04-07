@@ -18,13 +18,14 @@ const auto PARSE_MODE = "MarkdownV2";
 const std::regex markdonwn_specials_pattern("[_\\,\\*\\[\\]\\(\\)\\~>\\#\\+\\-=\\|\\{\\}\\.\\!]");
 const std::regex ytm_pattern("\\/ytm (\\d+\\.\\d+)");
 const std::regex dtm_pattern("\\/dtm (\\d+)");
+const int MAX_MESSAGE_PRICES = 20;
 
 const std::string format_double(const double val) {
     double int_part;
     double fract_part = modf(val , &int_part);
     int int_part_value = std::trunc(int_part);
     int fract_part_value = std::trunc(fract_part * 100);
-    return std::vformat("{}\\.{}", std::make_format_args(int_part_value, fract_part_value));
+    return std::vformat("{:d}\\.{:02d}", std::make_format_args(int_part_value, fract_part_value));
 }
 
 const std::string format_date(const zoned_time& date) {
@@ -44,20 +45,6 @@ const std::string get_localized_state(const WorkingState& state) {
     }
 
     throw std::invalid_argument {"unknown state"};
-}
-
-const std::string get_localized_bond(const int count) {
-    int digit = count % 10;
-    switch (digit) {
-        case 1:
-            return "облигация";
-        case 2:
-        case 3:
-        case 4:
-            return "облигации";
-        default:
-            return "облигаций";
-    };
 }
 
 const std::string sanitize_text(const std::string text) {
@@ -189,14 +176,14 @@ void Notifier::send_working_time_error() {
 }
 
 void Notifier::send_bonds_update_stats(const BondsUpdateStats& stats) {
-    auto message = std::vformat(config.tgbot.bonds_stats_template, std::make_format_args(
-        stats.total_bonds_loaded, get_localized_bond(stats.total_bonds_loaded)));
+    auto message = std::vformat(config.tgbot.bonds_stats_template, std::make_format_args(stats.total_bonds_loaded));
     send_message(message);
 }
 
 void Notifier::send_price_update_stats(const PriceUpdateStats& stats) {
     std::string message;
-    for (auto& price : stats.new_prices) {
+    for (size_t i = 0; i < stats.new_prices.size(); i++) {
+        auto& price = stats.new_prices[i];
         auto price_message = std::vformat(config.tgbot.price_template, std::make_format_args(
             sanitize_text(price.name),
             price.isin,
@@ -205,8 +192,13 @@ void Notifier::send_price_update_stats(const PriceUpdateStats& stats) {
             format_double(price.price)
         ));
         message += price_message;
+
+        if ((i > 0 && i % MAX_MESSAGE_PRICES == 0) || (i == stats.new_prices.size() - 1)) {
+            send_message(message);
+            message.clear();
+        }
     }
-    send_message(message);
+    
 }
 
 void Notifier::on_stats_requested(const std::function<ScannerStats ()>& func) {
