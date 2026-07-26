@@ -75,72 +75,77 @@ std::unordered_set<std::string> BondsLoader::find(const int page) {
 }
 
 std::optional<BondInfo> BondsLoader::load_bond(const std::string& bond_isin) {
-    std::string metadata_response;
-    time_point now = std::chrono::system_clock::now();
-
     try {
-        BondMetadataRequest request { .id = bond_isin };
-        metadata_response = t_client.post(config.broker.metadata_path, to_json(request));
-    } catch (http::not_found const& e) {
-        return std::optional<BondInfo>{};
-    }
+        std::string metadata_response;
+        time_point now = std::chrono::system_clock::now();
 
-    BondMetadataResponse metadata = parse<BondMetadataResponse>(metadata_response);
-    if (bond_isin != metadata.isin || metadata.maturity_date <= now) {
-        return std::optional<BondInfo>{};
-    }
-
-    AccuredInterestRequest interest_request { .from = now, .to = now, .uid = metadata.uid };
-    auto interest_response = t_client.post(config.broker.interest_path, to_json(interest_request));
-    auto interest = parse<AccuredInterestResponse>(interest_response);
-
-    time_point coupon_start_date = now + std::chrono::days(1);
-    time_point coupon_end_date = metadata.maturity_date + std::chrono::days(7);
-    CouponsRequest coupons_request { .from = coupon_start_date, .to = coupon_end_date, .uid = metadata.uid };
-    auto coupons_response = t_client.post(config.broker.coupons_path, to_json(coupons_request));
-    auto coupons = parse<CouponsResponse>(coupons_response);
-
-    long cash_flow = metadata.nominal;
-    for (auto& coupon : coupons.coupons) {
-        if (coupon.date < coupon_start_date) {
-            continue;
+        try {
+            BondMetadataRequest request { .id = bond_isin };
+            metadata_response = t_client.post(config.broker.metadata_path, to_json(request));
+        } catch (http::not_found const& e) {
+            return std::optional<BondInfo>{};
         }
-        cash_flow += coupon.interest;
-    }
 
-    time_point maturity_date;
-    if (coupons.coupons.size() > 0) {
-        time_point max_date = coupons.coupons[0].date;
+        BondMetadataResponse metadata = parse<BondMetadataResponse>(metadata_response);
+        if (bond_isin != metadata.isin || metadata.maturity_date <= now) {
+            return std::optional<BondInfo>{};
+        }
+
+        AccuredInterestRequest interest_request { .from = now, .to = now, .uid = metadata.uid };
+        auto interest_response = t_client.post(config.broker.interest_path, to_json(interest_request));
+        auto interest = parse<AccuredInterestResponse>(interest_response);
+
+        time_point coupon_start_date = now + std::chrono::days(1);
+        time_point coupon_end_date = metadata.maturity_date + std::chrono::days(7);
+        CouponsRequest coupons_request { .from = coupon_start_date, .to = coupon_end_date, .uid = metadata.uid };
+        auto coupons_response = t_client.post(config.broker.coupons_path, to_json(coupons_request));
+        auto coupons = parse<CouponsResponse>(coupons_response);
+
+        long cash_flow = metadata.nominal;
         for (auto& coupon : coupons.coupons) {
-            if (max_date < coupon.date) {
-                max_date = coupon.date;
+            if (coupon.date < coupon_start_date) {
+                continue;
             }
+            cash_flow += coupon.interest;
         }
-        maturity_date = max_date;
-    } else {
-        maturity_date = metadata.maturity_date;
-    }
-    auto maturity_interval = maturity_date - std::chrono::system_clock::now();
-    int dtm = std::chrono::duration_cast<std::chrono::days>(maturity_interval).count() + 3;
 
-    if (!metadata.buy_available || 
-        !metadata.sell_available ||
-        metadata.floating_coupon ||
-        metadata.amortization ||
-        metadata.subordinated ||
-        !metadata.iis) {
-        return std::optional<BondInfo>{};
-    }
-
-    return std::optional<BondInfo> {
-        BondInfo {
-            .isin = std::move(metadata.isin),
-            .uid = metadata.uid,
-            .name = std::move(metadata.name),
-            .accured_interest = interest.interest,
-            .nominal = metadata.nominal,
-            .cash_flow = cash_flow,
-            .dtm = dtm
+        time_point maturity_date;
+        if (coupons.coupons.size() > 0) {
+            time_point max_date = coupons.coupons[0].date;
+            for (auto& coupon : coupons.coupons) {
+                if (max_date < coupon.date) {
+                    max_date = coupon.date;
+                }
+            }
+            maturity_date = max_date;
+        } else {
+            maturity_date = metadata.maturity_date;
         }
-    };
+        auto maturity_interval = maturity_date - std::chrono::system_clock::now();
+        int dtm = std::chrono::duration_cast<std::chrono::days>(maturity_interval).count() + 3;
+
+        if (!metadata.buy_available || 
+            !metadata.sell_available ||
+            metadata.floating_coupon ||
+            metadata.amortization ||
+            metadata.subordinated ||
+            !metadata.iis) {
+            return std::optional<BondInfo>{};
+        }
+
+        return std::optional<BondInfo> {
+            BondInfo {
+                .isin = std::move(metadata.isin),
+                .uid = metadata.uid,
+                .name = std::move(metadata.name),
+                .accured_interest = interest.interest,
+                .nominal = metadata.nominal,
+                .cash_flow = cash_flow,
+                .dtm = dtm
+            }
+        };
+    } catch (const std::exception& ex) {
+        BOOST_LOG_TRIVIAL(error) << "Error loading bond " << bond_isin << ": " << ex.what();
+        throw;
+    }
 }

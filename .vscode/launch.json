@@ -29,7 +29,12 @@
           "mode": "loadAllButExcluded",
           "excludedModules": []
         }
-      }
+      },
+      "setupCommands": [ {
+        "description": "Wipe debuginfod URLs to bypass extension bug",
+        "text": "set debuginfod urls ",
+        "ignoreFailures": true
+      }]
     }
   ]
 }
